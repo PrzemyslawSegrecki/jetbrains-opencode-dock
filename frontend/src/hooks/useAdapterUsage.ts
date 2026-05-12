@@ -138,7 +138,6 @@ export function useAdapterUsage(adapterId: string) {
 
   useEffect(() => {
     if (!isChatMode || !enabled || !isSending) {
-      prevIsSendingRef.current = isSending;
       return;
     }
 

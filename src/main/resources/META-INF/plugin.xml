@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>agentdock</id>
     <name>Agent Dock</name>
-    <version>1.1.2</version>
+    <version>1.2.0</version>
     <vendor url="https://github.com/edgarsr/agentdock">EdgarsR</vendor>
 
     <description><![CDATA[
@@ -31,6 +31,7 @@
             <li>Voice input for prompts (Windows only).</li>
             <li>Chats can be continued in the IDE terminal when CLI mode is a better fit.</li>
             <li>Chat history supports opening, renaming, deleting, and bulk deletion.</li>
+            <li>Chats can be forked from any point.</li>
             <li>AI agents can be switched within the same chat while preserving the session context.</li>
             <li>MCP server configuration for additional agent tools and external resources.</li>
             <li>Reusable prompts can be saved in the prompt library and inserted into chat when needed.</li>
@@ -46,7 +47,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        Fixed minor bugs and made UI refinements.
+        <ul>
+            <li>Added the status bar quota widget.</li>
+            <li>Fixed chat forking from any point.</li>
+        </ul>
     ]]></change-notes>
 
      <depends>com.intellij.modules.platform</depends>

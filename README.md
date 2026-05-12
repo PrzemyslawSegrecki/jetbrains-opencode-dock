@@ -30,6 +30,7 @@ Currently supported AI agents:
 - Voice input for prompts (Windows only).
 - Chats can be continued in the IDE terminal when CLI mode is a better fit.
 - Chat history supports opening, renaming, deleting, and bulk deletion.
+- Chats can be forked from any point.
 - AI agents can be switched within the same chat while preserving the session context.
 - MCP server configuration for additional agent tools and external resources.
 - Reusable prompts can be saved in the prompt library and inserted into chat when needed.
