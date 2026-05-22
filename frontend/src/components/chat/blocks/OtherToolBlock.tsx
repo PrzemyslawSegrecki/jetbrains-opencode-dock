@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ToolCallBlock } from '../../../types/chat';
 import { ChevronRight, Wrench } from 'lucide-react';
 import { parseToolStatus, safeParseJson } from '../../../utils/toolCallUtils';
@@ -25,6 +25,38 @@ export const OtherToolBlock: React.FC<Props> = ({ block }) => {
   const { isPending, isError } = parseToolStatus(block.entry.status);
   const { isExpanded, toggle } = useAutoCollapse();
   const json = safeParseJson(block.entry.rawJson);
+
+  const promptText = typeof json?.rawInput?.prompt === 'string' && json.rawInput.prompt.trim()
+    ? json.rawInput.prompt.trim()
+    : '';
+
+  let bodyText = '';
+  if (block.entry.result?.trim()) {
+    bodyText = block.entry.result;
+  } else if (Array.isArray(json.content)) {
+    const contentText = json.content
+      .map((c: { text?: string; content?: { text?: string } }) => c?.text || c?.content?.text)
+      .filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
+      .join('\n\n');
+    if (contentText) {
+      bodyText = contentText;
+    }
+  }
+
+  if (!bodyText) {
+    const rawContent = json?.rawOutput?.content;
+    if (typeof rawContent === 'string' && rawContent.trim()) {
+      bodyText = rawContent.trim();
+    }
+  }
+
+  const formattedJsonBody = bodyText ? tryFormatJson(bodyText) : null;
+  const bodyIsMarkdown = bodyText ? !/^\s*<[a-zA-Z!?]/.test(bodyText) : false;
+  const markdownBody = formattedJsonBody
+    ? `\`\`\`json\n${formattedJsonBody}\n\`\`\``
+    : (bodyIsMarkdown ? bodyText : null);
+  const sanitizedHtmlBody = markdownBody ? null : sanitizeMarkdownHtml(bodyText);
+
   if (json?.rawInput?.todos) {
     return (<></>);
   }
@@ -34,47 +66,6 @@ export const OtherToolBlock: React.FC<Props> = ({ block }) => {
   const title = skillName
     ? `Launching skill: ${skillName}`
     : (block.entry.title || block.entry.kind || 'Tool activity');
-
-  const { promptText, bodyText } = useMemo(() => {
-    const promptText = typeof json?.rawInput?.prompt === 'string' && json.rawInput.prompt.trim()
-      ? json.rawInput.prompt.trim()
-      : '';
-
-    let bodyText = '';
-    if (block.entry.result?.trim()) {
-      bodyText = block.entry.result;
-    } else if (Array.isArray(json.content)) {
-      const contentText = json.content
-        .map((c: { text?: string; content?: { text?: string } }) => c?.text || c?.content?.text)
-        .filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
-        .join('\n\n');
-      if (contentText) {
-        bodyText = contentText;
-      }
-    }
-
-    if (!bodyText) {
-      const rawContent = json?.rawOutput?.content;
-      if (typeof rawContent === 'string' && rawContent.trim()) {
-        bodyText = rawContent.trim();
-      }
-    }
-
-    return { promptText, bodyText };
-  }, [block.entry.rawJson, block.entry.result]);
-  const formattedJsonBody = useMemo(() => (
-    bodyText ? tryFormatJson(bodyText) : null
-  ), [bodyText]);
-  const bodyIsMarkdown = bodyText ? !/^\s*<[a-zA-Z!?]/.test(bodyText) : false;
-  const markdownBody = useMemo(() => {
-    if (formattedJsonBody) {
-      return `\`\`\`json\n${formattedJsonBody}\n\`\`\``;
-    }
-    return bodyIsMarkdown ? bodyText : null;
-  }, [formattedJsonBody, bodyIsMarkdown, bodyText]);
-  const sanitizedHtmlBody = useMemo(() => (
-    markdownBody ? null : sanitizeMarkdownHtml(bodyText)
-  ), [markdownBody, bodyText]);
 
   const argsText = skillArgs !== undefined
     ? (typeof skillArgs === 'string' ? skillArgs.trim() : JSON.stringify(skillArgs, null, 2))

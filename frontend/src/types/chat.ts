@@ -503,6 +503,8 @@ declare global {
     __continueConversationWithSession?: (payload: ContinueConversationPayload) => void;
     __saveConversationTranscript?: (payload: string) => void;
     __requestHostRepaint?: (reason?: string) => void;
+    __reportFrontendDiagnostic?: (payload: string) => void;
+    __pendingFrontendDiagnostics?: string[];
 
     // Callbacks (Backend -> Frontend)
     __onAcpLog?: (payload: AcpLogEntryPayload) => void;
