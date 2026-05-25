@@ -62,6 +62,12 @@ internal suspend fun AcpClientService.startAgent(
                 context.statusRef.set(AcpClientService.Status.Error)
                 throw IllegalStateException("Agent '$requestedAdapterName' is not downloaded")
             }
+            if (AcpAdapterPaths.runtimeSource(requestedAdapterName) == ADAPTER_RUNTIME_SOURCE_SYSTEM &&
+                !AcpAgentPreferencesStore.isSystemAdapterEnabled(requestedAdapterName)
+            ) {
+                context.statusRef.set(AcpClientService.Status.Error)
+                throw IllegalStateException("Agent '$requestedAdapterName' is available but not enabled")
+            }
 
             context.statusRef.set(AcpClientService.Status.Initializing)
 

@@ -444,6 +444,19 @@ internal fun AcpBridge.installAdapterQueries() {
         }
     }
 
+    toggleAgentEnabledQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
+        addHandler { payload ->
+            val obj = runCatching { Json.parseToJsonElement(payload).jsonObject }.getOrNull()
+            val adapterId = obj?.get("adapterId")?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
+            val enabled = obj?.get("enabled")?.jsonPrimitive?.booleanOrNull ?: false
+            if (adapterId.isNotBlank()) {
+                AcpAgentPreferencesStore.setSystemAdapterEnabled(adapterId, enabled)
+                scope.launch(Dispatchers.IO) { pushAdapters() }
+            }
+            JBCefJSQuery.Response("ok")
+        }
+    }
+
     loginAgentQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
         addHandler { payload ->
             val adapterId = parseIdOnlyPayload(payload)

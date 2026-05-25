@@ -99,6 +99,8 @@ object AcpAdapterConfig {
         val distribution: Distribution,
         val launchPath: String = "",
         val launchBinary: PlatformBinary? = null,
+        val systemExecutable: PlatformBinary? = null,
+        val preferSystemExecutable: Boolean = false,
         val disabledModels: List<String> = emptyList(),
         val disabledModes: List<String> = emptyList(),
         val args: List<String> = emptyList(),

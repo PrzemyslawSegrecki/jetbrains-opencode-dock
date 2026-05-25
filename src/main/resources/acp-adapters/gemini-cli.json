@@ -12,6 +12,11 @@
     "win": "node_modules/.bin/gemini.cmd",
     "unix": "node_modules/.bin/gemini"
   },
+  "systemExecutable": {
+    "win": "gemini.cmd",
+    "unix": "gemini"
+  },
+  "preferSystemExecutable": true,
   "args": [
     "--acp"
   ],

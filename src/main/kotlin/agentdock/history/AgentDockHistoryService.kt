@@ -186,6 +186,20 @@ object AgentDockHistoryService {
         return HistoryReplayStore.copyPromptPrefix(source, base.promptCount)
     }
 
+    fun truncateConversationReplay(projectPath: String?, conversationId: String, promptCount: Int): Boolean {
+        val cleanProjectPath = canonicalHistoryProjectPath(projectPath)
+        val cleanConversationId = runCatching {
+            HistoryStorage.requireSafeConversationId(conversationId)
+        }.getOrElse { return false }
+        if (cleanProjectPath.isBlank() || cleanConversationId.isBlank()) return false
+
+        val file = HistoryStorage.conversationDataFile(cleanProjectPath, cleanConversationId)
+        val data = HistoryReplayStore.readConversationData(file) ?: return true
+        val truncated = HistoryReplayStore.copyPromptPrefix(data, promptCount)
+        HistoryReplayStore.writeConversationData(file, truncated)
+        return true
+    }
+
     fun deleteConversationReplay(projectPath: String?, conversationId: String?): Boolean {
         val cleanProjectPath = canonicalHistoryProjectPath(projectPath)
         val cleanConversationId = runCatching {

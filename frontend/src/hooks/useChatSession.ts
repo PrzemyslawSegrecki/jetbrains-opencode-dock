@@ -77,6 +77,9 @@ export function useChatSession(
   const recoveryInFlightRef = useRef(false);
   const initialUserMessageCountRef = useRef(initialMessages.filter((message) => message.role === 'user').length);
   const forkBaseRef = useRef<ForkConversationBase | undefined>(forkBase);
+  const canRestartHistorySessionRef = useRef(false);
+  const revertInFlightRef = useRef(false);
+  const revertHandoffTextRef = useRef<string | null>(null);
 
   const {
     applyBufferedChunks,
@@ -244,6 +247,7 @@ export function useChatSession(
   useEffect(() => {
     allowMetadataUpdateRef.current = false;
     lastMetadataFingerprintRef.current = '';
+    canRestartHistorySessionRef.current = false;
     statusRef.current = 'not started';
     setStatus('not started');
     setAcpSessionId('');
@@ -264,7 +268,7 @@ export function useChatSession(
 
   const startSelectedAgent = useCallback(() => {
     if (!selectedAgentId) return false;
-    if (historySession) return false;
+    if (historySession && !canRestartHistorySessionRef.current) return false;
     if (!selectedAgent?.downloaded) {
       return false;
     }
@@ -371,6 +375,7 @@ export function useChatSession(
         const forkBaseToPersist = forkBaseRef.current;
         ACPBridge.sendPrompt(conversationId, JSON.stringify(blocksToSend), forkBaseToPersist).then(() => {
           forkBaseRef.current = undefined;
+          revertHandoffTextRef.current = null;
           consumeHandoff();
         }).catch((err) => {
           console.warn('[useChatSession] Failed to send pending blocks:', err);
@@ -508,6 +513,8 @@ export function useChatSession(
     if (normalizedBlocks.length === 0) return;
     const outgoingBlocks = pendingHandoffRef.current
       ? prependHandoffContext(normalizedBlocks, pendingHandoffRef.current.text)
+      : revertHandoffTextRef.current
+      ? prependHandoffContext(normalizedBlocks, revertHandoffTextRef.current)
       : normalizedBlocks;
 
     allowMetadataUpdateRef.current = true;
@@ -544,7 +551,7 @@ export function useChatSession(
     if (status !== 'ready') {
       // Queue it up
       pendingPromptRef.current = outgoingBlocks;
-      if (status === 'not started' || status === 'error') {
+      if ((status === 'not started' || status === 'error') && !revertInFlightRef.current) {
         startSelectedAgent();
       }
       return;
@@ -553,6 +560,7 @@ export function useChatSession(
     const forkBaseToPersist = forkBaseRef.current;
     ACPBridge.sendPrompt(conversationId, JSON.stringify(outgoingBlocks), forkBaseToPersist).then(() => {
       forkBaseRef.current = undefined;
+      revertHandoffTextRef.current = null;
       consumeHandoff();
       setPermissionQueue([]);
     }).catch((e) => {
@@ -595,6 +603,54 @@ export function useChatSession(
     }
   };
 
+  const handleRevertToMessage = useCallback((messageId: string, handoffText?: string) => {
+    const allMessages = [...historyMessages, ...liveMessages];
+    const messageIndex = allMessages.findIndex((m) => m.id === messageId);
+    if (messageIndex < 0) return;
+
+    let endExclusive = messageIndex + 1;
+    if (allMessages[messageIndex].role === 'user' && allMessages[messageIndex + 1]?.role === 'assistant') {
+      endExclusive += 1;
+    }
+
+    const keepMessages = allMessages.slice(0, endExclusive);
+    const promptCount = keepMessages.filter((m) => m.role === 'user').length;
+    if (promptCount <= 0) return;
+
+    setHistoryMessages(keepMessages);
+    setLiveMessages([]);
+    setIsSending(false);
+    setPermissionQueue([]);
+    pendingPromptRef.current = null;
+    startTimeRef.current = null;
+    statusRef.current = 'not started';
+    setStatus('not started');
+    setAcpSessionId('');
+    startedAgentIdRef.current = '';
+    startedModelIdRef.current = '';
+    startedModeIdRef.current = '';
+    canRestartHistorySessionRef.current = true;
+    revertHandoffTextRef.current = handoffText?.trim() || null;
+    initialUserMessageCountRef.current = promptCount;
+    allowMetadataUpdateRef.current = !historySession;
+    touchUpdatedAtRef.current = !historySession;
+    lastMetadataFingerprintRef.current = '';
+    clearBufferedChunks();
+    markFlushUnscheduled();
+
+    revertInFlightRef.current = true;
+    ACPBridge.revertToMessage(conversationId, messageId, promptCount)
+      .catch((error) => {
+        console.warn('[useChatSession] Failed to revert to message:', error);
+      })
+      .finally(() => {
+        revertInFlightRef.current = false;
+        if (pendingPromptRef.current && (statusRef.current === 'not started' || statusRef.current === 'error')) {
+          startSelectedAgent();
+        }
+      });
+  }, [conversationId, historyMessages, liveMessages, historySession, clearBufferedChunks, markFlushUnscheduled, startSelectedAgent]);
+
   const handlePermissionDecision = (decision: string) => {
     if (!permissionRequest) return;
     try {
@@ -625,6 +681,7 @@ export function useChatSession(
     permissionRequest,
     handleSend,
     handleStop,
+    handleRevertToMessage,
     handlePermissionDecision,
     hasSelectedAgent: !!resolvedSelectedAgent,
     attachments,

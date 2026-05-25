@@ -18,6 +18,11 @@
   "args": [
     "acp"
   ],
+  "systemExecutable": {
+    "win": "cursor-agent.cmd",
+    "unix": "cursor-agent"
+  },
+  "preferSystemExecutable": true,
   "cli": {
     "executable": {
       "win": "cursor-agent.cmd",

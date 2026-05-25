@@ -13,6 +13,11 @@
     "win": "node_modules/.bin/kilo.cmd",
     "unix": "node_modules/@kilocode/cli/bin/kilo"
   },
+  "systemExecutable": {
+    "win": "kilo.cmd",
+    "unix": "kilo"
+  },
+  "preferSystemExecutable": true,
   "disabledModels": [
     "kilo/google/lyria-",
     "kilo/google/imagen-",

@@ -10,6 +10,11 @@
     "packageName": "@github/copilot"
   },
   "launchPath": "index.js",
+  "systemExecutable": {
+    "win": "copilot.cmd",
+    "unix": "copilot"
+  },
+  "preferSystemExecutable": true,
   "args": [
     "--acp",
     "--stdio"

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AgentOption } from '../types/chat';
+import { AgentOption, isAgentRunnable } from '../types/chat';
 import { ACPBridge } from '../utils/bridge';
 
 export function useAvailableAgents() {
@@ -23,16 +23,16 @@ export function useAvailableAgents() {
       });
       stableAgentSnapshotsRef.current = nextSnapshots;
 
-      const stableLastUsedRunnableId = safeAdapters.find((agent) => agent.isLastUsed && agent.downloaded === true)?.id;
+      const stableLastUsedRunnableId = safeAdapters.find((agent) => agent.isLastUsed && isAgentRunnable(agent))?.id;
       if (stableLastUsedRunnableId) {
         lastStableNewTabAgentIdRef.current = stableLastUsedRunnableId;
       } else {
         const currentStable = lastStableNewTabAgentIdRef.current;
         const currentStableStatus = currentStable ? safeAdapters.find((agent) => agent.id === currentStable) : undefined;
         if (currentStableStatus?.downloadedKnown === true && currentStableStatus.downloaded !== true) {
-          lastStableNewTabAgentIdRef.current = safeAdapters.find((agent) => agent.downloaded === true)?.id || '';
+          lastStableNewTabAgentIdRef.current = safeAdapters.find(isAgentRunnable)?.id || '';
         } else if (!currentStable) {
-          lastStableNewTabAgentIdRef.current = safeAdapters.find((agent) => agent.downloaded === true)?.id || '';
+          lastStableNewTabAgentIdRef.current = safeAdapters.find(isAgentRunnable)?.id || '';
         }
       }
 

@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.*
+import agentdock.history.AgentDockHistoryService
 
 private data class PermissionDecisionPayload(
     val requestId: String,
@@ -314,6 +315,38 @@ internal fun AcpBridge.installConversationQueries() {
                 scope.launch(Dispatchers.Default) {
                     service.respondToPermissionRequest(request.requestId, request.decision)
                 }
+            }
+            JBCefJSQuery.Response("ok")
+        }
+    }
+
+    revertToMessageQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
+        addHandler { payload ->
+            val parsed = parseRevertPayload(payload)
+            val chatId = parsed.chatId.orEmpty()
+            if (chatId.isNotEmpty() && parsed.promptCount > 0) {
+                scope.launch(Dispatchers.Default) {
+                    try {
+                        service.stopAgent(chatId)
+                        livePromptCaptures.remove(chatId)
+                        historyReplayCaptures.remove(chatId)
+                        promptJobs[chatId]?.cancel()
+                        promptJobs.remove(chatId)
+                        val projectPath = service.project.basePath
+                        AgentDockHistoryService.truncateConversationReplay(
+                            projectPath,
+                            chatId,
+                            parsed.promptCount
+                        )
+                        pushBridgeOperationResult(parsed.requestId, chatId, "revert_to_message", ok = true)
+                        pushStatus(chatId, "not started")
+                    } catch (e: Exception) {
+                        pushBridgeOperationResult(parsed.requestId, chatId, "revert_to_message", ok = false, error = formatAcpError(e))
+                        pushConversationError(chatId, "Revert failed: ${formatAcpError(e)}")
+                    }
+                }
+            } else {
+                pushBridgeOperationResult(parsed.requestId, chatId, "revert_to_message", ok = false, error = "Invalid revert request.")
             }
             JBCefJSQuery.Response("ok")
         }

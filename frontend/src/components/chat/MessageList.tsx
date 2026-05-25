@@ -45,6 +45,7 @@ interface MessageListProps {
   availableAgents: AgentOption[];
   isHistoryReplaying?: boolean;
   onForkFromMessage?: (messageId: string) => void;
+  onRevertToMessage?: (messageId: string) => void;
   scrollToBottomOnInitialMessages?: boolean;
 }
 
@@ -60,6 +61,7 @@ function MessageList({
   availableAgents,
   isHistoryReplaying = false,
   onForkFromMessage,
+  onRevertToMessage,
   scrollToBottomOnInitialMessages = false
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -319,6 +321,7 @@ function MessageList({
                 agentIconPath={resolvedAgentIconPath}
                 isActivePrompt={Boolean(isSending) && isLast}
                 onFork={!isSending && onForkFromMessage ? () => onForkFromMessage(message.id) : undefined}
+                onRevert={!isSending && onRevertToMessage ? () => onRevertToMessage(message.id) : undefined}
               />
             );
           }

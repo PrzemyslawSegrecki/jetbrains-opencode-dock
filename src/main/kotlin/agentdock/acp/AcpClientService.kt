@@ -17,6 +17,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.ContinuationInterceptor
 
 data class PermissionRequest(
     val requestId: String,
@@ -153,6 +155,7 @@ class AcpClientService private constructor(val project: Project) {
             sessionUpdateQueue = null
             sessionUpdateWorker?.cancel()
             sessionUpdateWorker = null
+            (sessionUpdateScope?.coroutineContext?.get(ContinuationInterceptor) as? ExecutorCoroutineDispatcher)?.close()
             sessionUpdateScope?.coroutineContext?.cancel()
             sessionUpdateScope = null
             sessionUpdateWrapped = false

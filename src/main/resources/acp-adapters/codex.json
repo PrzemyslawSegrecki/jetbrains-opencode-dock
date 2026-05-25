@@ -19,6 +19,11 @@
       "unix": "codex-acp"
     }
   },
+  "systemExecutable": {
+    "win": "codex-acp.exe",
+    "unix": "codex-acp"
+  },
+  "preferSystemExecutable": true,
   "disabledModels": [
     "-5.3",
     "-5.1",

@@ -17,9 +17,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
@@ -37,6 +39,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.util.Collections
+import java.util.concurrent.Executors
 import agentdock.BuildConfig
 import agentdock.history.AgentDockHistoryService
 
@@ -56,6 +59,8 @@ internal fun AcpClientService.initializeDownloadedAdaptersInBackground() {
     AcpAdapterConfig.getAllAdapters().values.forEach { adapterInfo ->
         val downloaded = runCatching { AcpAdapterPaths.isDownloaded(adapterInfo.id) }.getOrDefault(false)
         if (!downloaded) return@forEach
+        val runtimeSource = runCatching { AcpAdapterPaths.runtimeSource(adapterInfo.id) }.getOrNull()
+        if (runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) return@forEach
         initializeAdapterInBackground(adapterInfo.id)
     }
 }
@@ -488,7 +493,6 @@ internal fun AcpClientService.resolveAdapterProcessWorkingDirectory(adapterRoot:
     return projectBase ?: adapterRoot
 }
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 internal fun AcpClientService.ensureAsyncSessionUpdates(sharedProc: AcpClientService.SharedProcess) {
     synchronized(sharedProc) {
         if (sharedProc.sessionUpdateWrapped) return
@@ -504,7 +508,12 @@ internal fun AcpClientService.ensureAsyncSessionUpdates(sharedProc: AcpClientSer
             val handlers = field.get(protocol) as AtomicRef<PersistentMap<MethodName, suspend (JsonRpcNotification) -> Unit>>
             val methodName = AcpMethod.ClientMethods.SessionUpdate.methodName
             val original = handlers.value[methodName] ?: return
-            val updateScope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
+            val updateDispatcher = Executors.newSingleThreadExecutor { runnable ->
+                Thread(runnable, "agentdock-session-update-${sharedProc.adapterName}").apply {
+                    isDaemon = true
+                }
+            }.asCoroutineDispatcher()
+            val updateScope = CoroutineScope(SupervisorJob() + updateDispatcher)
             sharedProc.sessionUpdateScope = updateScope
             val queue = Channel<QueuedSessionUpdate>(Channel.UNLIMITED)
             sharedProc.sessionUpdateQueue = queue
@@ -540,6 +549,7 @@ internal fun AcpClientService.ensureAsyncSessionUpdates(sharedProc: AcpClientSer
             sharedProc.sessionUpdateQueue = null
             sharedProc.sessionUpdateWorker?.cancel()
             sharedProc.sessionUpdateWorker = null
+            (sharedProc.sessionUpdateScope?.coroutineContext?.get(kotlin.coroutines.ContinuationInterceptor) as? ExecutorCoroutineDispatcher)?.close()
             sharedProc.sessionUpdateScope?.coroutineContext?.cancel()
             sharedProc.sessionUpdateScope = null
             sharedProc.sessionUpdateWrapped = false

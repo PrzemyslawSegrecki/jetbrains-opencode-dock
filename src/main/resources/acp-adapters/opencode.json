@@ -13,6 +13,11 @@
     "win": "node_modules/.bin/opencode.cmd",
     "unix": "node_modules/opencode-ai/bin/opencode"
   },
+  "systemExecutable": {
+    "win": "opencode.cmd",
+    "unix": "opencode"
+  },
+  "preferSystemExecutable": true,
   "args": [
     "acp"
   ],

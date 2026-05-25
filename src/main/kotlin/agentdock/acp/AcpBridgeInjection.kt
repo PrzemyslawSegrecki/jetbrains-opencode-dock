@@ -25,6 +25,7 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val cancelAgentInstallInject = cancelAgentInstallQuery?.inject("adapterId") ?: ""
     val deleteAgentInject = deleteAgentQuery?.inject("adapterId") ?: ""
     val updateAgentInject = updateAgentQuery?.inject("adapterId") ?: ""
+    val toggleAgentEnabledInject = toggleAgentEnabledQuery?.inject("JSON.stringify(payload)") ?: ""
     val loginAgentInject = loginAgentQuery?.inject("adapterId") ?: ""
     val logoutAgentInject = logoutAgentQuery?.inject("adapterId") ?: ""
     val fetchUsageInject = fetchUsageQuery?.inject("adapterId") ?: ""
@@ -45,6 +46,7 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val updateSessionMetadataInject = updateSessionMetadataQuery?.inject("JSON.stringify(payload)") ?: ""
     val continueConversationInject = continueConversationQuery?.inject("JSON.stringify(payload)") ?: ""
     val saveConversationTranscriptInject = saveConversationTranscriptQuery?.inject("payload") ?: ""
+    val revertToMessageInject = revertToMessageQuery?.inject("payload") ?: ""
 
     val script = """
         (function() {
@@ -94,6 +96,9 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
             };
             window.__updateAgent = function(adapterId) {
                 try { $updateAgentInject } catch (e) { }
+            };
+            window.__toggleAgentEnabled = function(payload) {
+                try { $toggleAgentEnabledInject } catch (e) { }
             };
             window.__loginAgent = function(adapterId) {
                 try { $loginAgentInject } catch (e) { }
@@ -155,6 +160,9 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
             window.__saveConversationTranscript = function(payload) {
                 try { $saveConversationTranscriptInject } catch (e) { }
             };
+            window.__revertToMessage = function(payload) {
+                try { $revertToMessageInject } catch (e) { }
+            };
 
             // Try prime
             try { window.__requestAdapters(); } catch (e) {}
@@ -200,6 +208,7 @@ internal fun AcpBridge.injectReadySignal(cefBrowser: CefBrowser) {
         window.__deleteAgent = window.__deleteAgent || function(id) {};
         window.__onAdapterDeleted = window.__onAdapterDeleted || function(id) {};
         window.__updateAgent = window.__updateAgent || function(id) {};
+        window.__toggleAgentEnabled = window.__toggleAgentEnabled || function(payload) {};
         window.__loginAgent = window.__loginAgent || function(id) {};
         window.__logoutAgent = window.__logoutAgent || function(id) {};
         window.__fetchAdapterUsage = window.__fetchAdapterUsage || function(id) {};
@@ -213,6 +222,7 @@ internal fun AcpBridge.injectReadySignal(cefBrowser: CefBrowser) {
         window.__saveConversationTranscript = window.__saveConversationTranscript || function(payload) {};
         window.__loadHistoryConversation = window.__loadHistoryConversation || function(chatId, projectPath, conversationId) {};
         window.__recoverRuntime = window.__recoverRuntime || function(reason, requestId) {};
+        window.__revertToMessage = window.__revertToMessage || function(payload) {};
         window.__computeFileChangeStats = window.__computeFileChangeStats || function(payload) {};
     """.trimIndent()
     cefBrowser.executeJavaScript(script, cefBrowser.url, 0)

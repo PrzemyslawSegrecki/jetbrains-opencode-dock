@@ -60,6 +60,7 @@ internal fun AcpBridge.setDownloadProbeState(
     downloadProbeStates[key] = AdapterDownloadProbeState(
         downloaded = downloaded,
         downloadedKnown = true,
+        runtimeSource = if (downloaded) AcpAdapterPaths.runtimeSource(adapterId, target).orEmpty() else "",
         installedVersion = installedVersion
     )
 }
@@ -78,6 +79,9 @@ private fun AcpBridge.buildAdapterPayload(
     }
     val downloadedKnown = probeState?.downloadedKnown == true
     val downloaded = probeState?.downloaded
+    val runtimeSource = probeState?.runtimeSource.orEmpty()
+    val enabled = runtimeSource != ADAPTER_RUNTIME_SOURCE_SYSTEM || AcpAgentPreferencesStore.isSystemAdapterEnabled(info.id)
+    val managedLocally = runtimeSource != ADAPTER_RUNTIME_SOURCE_SYSTEM
     val initStatus = service.adapterInitializationStatus(info.id)
     val isInitializing = initStatus == AcpClientService.AdapterInitializationStatus.Initializing
 
@@ -102,7 +106,7 @@ private fun AcpBridge.buildAdapterPayload(
     val initError = if (authRequiredByInit) "" else rawInitError
 
     val shouldFetchAuth = downloadedKnown &&
-        downloaded == true && hasAuthentication && authUiMode == "login_logout" &&
+        downloaded == true && managedLocally && hasAuthentication && authUiMode == "login_logout" &&
         !isDownloading && !isAuthenticating
 
     val needsAuthFetch = shouldFetchAuth && !authStates.containsKey(info.id)
@@ -179,7 +183,11 @@ private fun AcpBridge.buildAdapterPayload(
         },
         downloaded = downloaded,
         downloadedKnown = downloadedKnown,
-        downloadPath = if (downloaded == true) AcpAdapterPaths.getDownloadPath(info.id, target) else "",
+        runtimeSource = runtimeSource,
+        enabled = enabled,
+        downloadPath = if (downloaded == true) {
+            AcpAdapterPaths.resolveLaunchPath(AcpAdapterPaths.getDownloadPath(info.id, target), info, target).orEmpty()
+        } else "",
         hasAuthentication = hasAuthentication,
         authAuthenticated = authAuthenticated,
         authKnown = authKnown,
@@ -222,9 +230,15 @@ private fun AcpBridge.ensureDownloadProbeStarted(
             } else {
                 null
             }
+            val runtimeSource = if (downloaded) {
+                AcpAdapterPaths.runtimeSource(adapterName = info.id, target = target).orEmpty()
+            } else {
+                ""
+            }
             downloadProbeStates[key] = AdapterDownloadProbeState(
                 downloaded = downloaded,
                 downloadedKnown = true,
+                runtimeSource = runtimeSource,
                 installedVersion = installedVersion
             )
         } catch (_: Exception) {
@@ -286,6 +300,7 @@ internal fun AcpBridge.pushAdapters(includeRuntimeChecks: Boolean = true) {
             if (updateCheckJobs[key]?.isActive == true) return@forEach
             val downloaded = adapters.firstOrNull { it.id == info.id }?.downloaded == true
             if (!downloaded || !AcpAdapterUpdates.isUpdateCheckSupported(info)) return@forEach
+            if (adapters.firstOrNull { it.id == info.id }?.runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) return@forEach
             if (!latestVersionStates[info.id].isNullOrBlank()) return@forEach
             updateCheckJobs[key] = scope.launch(Dispatchers.IO) {
                 try {
@@ -305,6 +320,7 @@ internal fun AcpBridge.pushAdapters(includeRuntimeChecks: Boolean = true) {
             if (agentVersionJobs[info.id]?.isActive == true) return@forEach
             val adapterPayload = adapters.firstOrNull { it.id == info.id }
             if (adapterPayload?.downloaded != true) return@forEach
+            if (adapterPayload.runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) return@forEach
             val isDownloading = adapterPayload.downloadStatus.isNotEmpty() && !adapterPayload.downloadStatus.startsWith("Error")
             if (isDownloading) return@forEach
             if (!agentVersionStates[info.id].isNullOrBlank()) return@forEach

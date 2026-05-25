@@ -32,6 +32,8 @@ internal data class AdapterPayload(
     val availableModes: List<AdapterModePayload>,
     val downloaded: Boolean? = null,
     val downloadedKnown: Boolean = false,
+    val runtimeSource: String = "",
+    val enabled: Boolean = true,
     val downloadPath: String = "",
     val hasAuthentication: Boolean,
     val authAuthenticated: Boolean? = null,
@@ -118,6 +120,7 @@ internal val adapterJson = Json { encodeDefaults = true }
 internal data class AdapterDownloadProbeState(
     val downloaded: Boolean? = null,
     val downloadedKnown: Boolean = false,
+    val runtimeSource: String = "",
     val installedVersion: String? = null
 )
 

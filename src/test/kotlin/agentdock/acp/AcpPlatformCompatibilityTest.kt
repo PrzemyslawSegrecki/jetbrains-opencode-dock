@@ -34,6 +34,18 @@ class AcpPlatformCompatibilityTest {
         assertEquals("node", command.first())
     }
 
+    @Test
+    fun `preferred system executable is used as runtime path`() = withOsName("Linux") {
+        val adapter = npmAdapter().copy(
+            systemExecutable = AcpAdapterConfig.PlatformBinary(unix = "tool"),
+            preferSystemExecutable = true
+        )
+
+        val launchPath = resolveAdapterRuntimePath("/tmp/agent", adapter, AcpExecutionTarget.LOCAL)
+
+        assertEquals("tool", launchPath)
+    }
+
     private fun npmAdapter(): AcpAdapterConfig.AdapterInfo {
         return AcpAdapterConfig.AdapterInfo(
             id = "tool",

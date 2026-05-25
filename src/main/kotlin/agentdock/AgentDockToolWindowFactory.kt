@@ -3,6 +3,7 @@ package agentdock
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.Disposable
@@ -43,6 +44,7 @@ import javax.swing.JProgressBar
 class AgentDockToolWindowFactory : ToolWindowFactory, DumbAware {
     companion object {
         private val IS_DEV_MODE = BuildConfig.IS_DEV
+        private val LOG = Logger.getInstance(AgentDockToolWindowFactory::class.java)
     }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -149,6 +151,12 @@ class AgentDockToolWindowFactory : ToolWindowFactory, DumbAware {
                             JBCefJSQuery.Response("ok")
                         }
 
+                        val frontendDiagnosticsQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase)
+                        frontendDiagnosticsQuery.addHandler { payload ->
+                            LOG.warn("[AgentDock frontend] $payload")
+                            JBCefJSQuery.Response("ok")
+                        }
+
                         browser.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
                             override fun onLoadEnd(cefBrowser: CefBrowser, frame: CefFrame, httpStatusCode: Int) {
                                 if (frame.isMain) {
@@ -177,6 +185,24 @@ class AgentDockToolWindowFactory : ToolWindowFactory, DumbAware {
                                         };
                                     """.trimIndent()
                                     cefBrowser.executeJavaScript(repaintInjection, cefBrowser.url, 0)
+
+                                    val frontendDiagnosticsInjection = """
+                                        window.__reportFrontendDiagnostic = function(payload) {
+                                          try {
+                                            ${frontendDiagnosticsQuery.inject("payload")}
+                                          } catch (e) {}
+                                        };
+                                        if (Array.isArray(window.__pendingFrontendDiagnostics) && window.__pendingFrontendDiagnostics.length > 0) {
+                                          var pending = window.__pendingFrontendDiagnostics.slice();
+                                          window.__pendingFrontendDiagnostics.length = 0;
+                                          pending.forEach(function(payload) {
+                                            try {
+                                              window.__reportFrontendDiagnostic(payload);
+                                            } catch (e) {}
+                                          });
+                                        }
+                                    """.trimIndent()
+                                    cefBrowser.executeJavaScript(frontendDiagnosticsInjection, cefBrowser.url, 0)
                                     acpBridge.injectReadySignal(cefBrowser)
                                     acpBridge.injectDebugApi(cefBrowser)
                                     historyBridge.injectApi(cefBrowser)

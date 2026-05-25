@@ -52,6 +52,7 @@ class AcpBridge(
     internal var updateSessionMetadataQuery: JBCefJSQuery? = null
     internal var continueConversationQuery: JBCefJSQuery? = null
     internal var saveConversationTranscriptQuery: JBCefJSQuery? = null
+    internal var revertToMessageQuery: JBCefJSQuery? = null
     internal var openAgentCliQuery: JBCefJSQuery? = null
     internal var openHistoryConversationCliQuery: JBCefJSQuery? = null
     internal var searchFilesQuery: JBCefJSQuery? = null

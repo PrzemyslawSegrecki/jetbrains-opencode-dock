@@ -55,6 +55,7 @@ object AcpAdapterPaths {
         val adapterInfo = getAdapterInfo(adapterName)
         val runtimeDir = File(getDependenciesDir(), adapterInfo.id)
         return installedVersionFromRuntimeDir(runtimeDir, adapterInfo)
+            ?: systemExecutableVersion(adapterInfo, target)
     }
 
     internal fun isDownloaded(
@@ -63,7 +64,7 @@ object AcpAdapterPaths {
     ): Boolean {
         val adapterInfo = getAdapterInfo(adapterName)
         val runtimeDir = File(getDependenciesDir(), adapterInfo.id)
-        return runtimeDir.isDirectory &&
+        val localDownloaded = runtimeDir.isDirectory &&
             when (adapterInfo.distribution.type) {
                 AcpAdapterConfig.DistributionType.ARCHIVE -> resolveAdapterLaunchFile(runtimeDir, adapterInfo, target)?.isFile == true
                 AcpAdapterConfig.DistributionType.NPM -> {
@@ -71,6 +72,16 @@ object AcpAdapterPaths {
                         resolveAdapterLaunchFile(runtimeDir, adapterInfo, target)?.isFile == true
                 }
             }
+        return localDownloaded || isSystemExecutableAvailable(adapterInfo, target)
+    }
+
+    internal fun runtimeSource(
+        adapterName: String? = null,
+        target: AcpExecutionTarget = currentTarget()
+    ): String? {
+        val adapterInfo = getAdapterInfo(adapterName)
+        val adapterRoot = File(getDependenciesDir(), adapterInfo.id).absolutePath
+        return resolveAdapterRuntimeSource(adapterRoot, adapterInfo, target)
     }
 
     internal fun deleteAdapter(adapterName: String? = null, target: AcpExecutionTarget = currentTarget()): Boolean {
@@ -164,7 +175,7 @@ object AcpAdapterPaths {
         adapterRootPath: String,
         adapterInfo: AcpAdapterConfig.AdapterInfo,
         target: AcpExecutionTarget = currentTarget()
-    ): String? = resolveAdapterLaunchPath(adapterRootPath, adapterInfo, target)
+    ): String? = resolveAdapterRuntimePath(adapterRootPath, adapterInfo, target)
 
     internal fun buildLaunchCommand(
         adapterRootPath: String,

@@ -113,6 +113,8 @@ export interface AgentOption {
   availableModes?: ModeOption[];
   downloaded?: boolean;
   downloadedKnown?: boolean;
+  runtimeSource?: 'local' | 'system' | '';
+  enabled?: boolean;
   downloadPath?: string;
   downloading?: boolean;
   downloadStatus?: string;
@@ -140,7 +142,7 @@ export interface AgentOption {
 }
 
 export function isAgentRunnable(agent: AgentOption): boolean {
-  return agent.downloaded === true;
+  return agent.downloaded === true && agent.enabled !== false;
 }
 
 export interface PermissionRequest {
@@ -404,7 +406,7 @@ export interface ConversationTranscriptSavedPayload {
 export interface BridgeOperationResultPayload {
   requestId: string;
   chatId: string;
-  operation: 'start_agent' | 'send_prompt' | 'cancel_prompt' | 'recover_runtime';
+  operation: 'start_agent' | 'send_prompt' | 'cancel_prompt' | 'recover_runtime' | 'revert_to_message';
   ok: boolean;
   error?: string;
 }
@@ -477,6 +479,7 @@ declare global {
     __cancelAgentInstall?: (adapterId: string) => void;
     __deleteAgent?: (adapterId: string) => void;
     __updateAgent?: (adapterId: string) => void;
+    __toggleAgentEnabled?: (payload: { adapterId: string; enabled: boolean }) => void;
     __requestHistoryList?: (projectPath?: string) => void;
     __syncHistoryList?: (projectPath?: string) => void;
     __deleteHistoryConversations?: (payload: { projectPath: string; conversationIds: string[] }) => void;
@@ -502,6 +505,7 @@ declare global {
     __updateSessionMetadata?: (payload: SessionMetadataUpdatePayload) => void;
     __continueConversationWithSession?: (payload: ContinueConversationPayload) => void;
     __saveConversationTranscript?: (payload: string) => void;
+    __revertToMessage?: (payload: string) => void;
     __requestHostRepaint?: (reason?: string) => void;
     __reportFrontendDiagnostic?: (payload: string) => void;
     __pendingFrontendDiagnostics?: string[];

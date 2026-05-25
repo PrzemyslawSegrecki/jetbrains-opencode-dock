@@ -224,6 +224,27 @@ internal fun codeRefBlockToText(blockObj: JsonObject): ContentBlock.Text {
     return ContentBlock.Text(text)
 }
 
+internal data class ParsedRevertPayload(
+    val requestId: String?,
+    val chatId: String?,
+    val messageId: String?,
+    val promptCount: Int
+)
+
+internal fun parseRevertPayload(payload: String?): ParsedRevertPayload {
+    val raw = payload?.trim().orEmpty()
+    if (raw.isEmpty()) return ParsedRevertPayload(null, null, null, 0)
+    return try {
+        val obj = Json.parseToJsonElement(raw).jsonObject
+        ParsedRevertPayload(
+            requestId = obj["requestId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() },
+            chatId = obj["conversationId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() },
+            messageId = obj["messageId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() },
+            promptCount = obj["promptCount"]?.jsonPrimitive?.intOrNull ?: 0
+        )
+    } catch (_: Exception) { ParsedRevertPayload(null, null, null, 0) }
+}
+
 internal data class SerializedContentBlock(
     val type: String,
     val text: String? = null,

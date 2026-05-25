@@ -15,7 +15,8 @@ data class AcpAgentPreference(
 @Serializable
 data class AcpAgentPreferencesState(
     val lastAgentId: String = "",
-    val agents: Map<String, AcpAgentPreference> = emptyMap()
+    val agents: Map<String, AcpAgentPreference> = emptyMap(),
+    val enabledSystemAdapters: Set<String> = emptySet()
 )
 
 object AcpAgentPreferencesStore {
@@ -58,6 +59,25 @@ object AcpAgentPreferencesStore {
         val trimmedAdapterId = adapterId.trim()
         if (trimmedAdapterId.isEmpty()) return
         updateState { current -> current.copy(lastAgentId = trimmedAdapterId) }
+    }
+
+    fun isSystemAdapterEnabled(adapterId: String): Boolean {
+        val trimmedAdapterId = adapterId.trim()
+        if (trimmedAdapterId.isEmpty()) return false
+        return load().enabledSystemAdapters.contains(trimmedAdapterId)
+    }
+
+    fun setSystemAdapterEnabled(adapterId: String, enabled: Boolean) {
+        val trimmedAdapterId = adapterId.trim()
+        if (trimmedAdapterId.isEmpty()) return
+        updateState { current ->
+            val nextEnabled = if (enabled) {
+                current.enabledSystemAdapters + trimmedAdapterId
+            } else {
+                current.enabledSystemAdapters - trimmedAdapterId
+            }
+            current.copy(enabledSystemAdapters = nextEnabled)
+        }
     }
 
     fun rememberModel(adapterId: String, modelId: String) {
@@ -117,9 +137,13 @@ object AcpAgentPreferencesStore {
             }
         }.toMap()
         val normalizedLastAgentId = state.lastAgentId.trim().takeIf { it.isNotEmpty() } ?: ""
+        val normalizedEnabledSystemAdapters = state.enabledSystemAdapters
+            .mapNotNull { it.trim().takeIf { adapterId -> adapterId.isNotEmpty() } }
+            .toSet()
         return AcpAgentPreferencesState(
             lastAgentId = normalizedLastAgentId,
-            agents = normalizedAgents
+            agents = normalizedAgents,
+            enabledSystemAdapters = normalizedEnabledSystemAdapters
         )
     }
 }

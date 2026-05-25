@@ -7,6 +7,11 @@
     "version": "latest",
     "packageName": "@agentclientprotocol/claude-agent-acp"
   },
+  "systemExecutable": {
+    "win": "claude.cmd",
+    "unix": "claude"
+  },
+  "preferSystemExecutable": true,
   "disabledModels": [],
   "disabledModes": [],
   "patches": [],

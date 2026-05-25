@@ -39,6 +39,7 @@ function mergeAgentSnapshot(previous: AgentOption | undefined, next: AgentOption
   const keepAgentVersion = (keepDownloadSnapshot || next.downloaded === true) && !next.downloading && !next.agentVersion && !!previous.agentVersion;
   const keepLatestVersion = (keepDownloadSnapshot || keepUpdateSnapshot) && !next.latestVersion && !!previous.latestVersion;
   const keepDownloadPath = (keepDownloadSnapshot || next.downloaded === true) && !next.downloadPath && !!previous.downloadPath;
+  const keepRuntimeSource = (keepDownloadSnapshot || next.downloaded === true) && !next.runtimeSource && !!previous.runtimeSource;
 
   return {
     ...previous,
@@ -47,6 +48,8 @@ function mergeAgentSnapshot(previous: AgentOption | undefined, next: AgentOption
     name: next.name || previous.name,
     downloadedKnown: keepDownloadSnapshot ? previous.downloadedKnown : next.downloadedKnown,
     downloaded: keepDownloadSnapshot ? previous.downloaded : next.downloaded,
+    runtimeSource: keepRuntimeSource ? previous.runtimeSource : next.runtimeSource,
+    enabled: next.enabled,
     downloadPath: keepDownloadPath ? previous.downloadPath : next.downloadPath,
     installedVersion: keepInstalledVersion ? previous.installedVersion : next.installedVersion,
     agentVersion: keepAgentVersion ? previous.agentVersion : next.agentVersion,
@@ -218,6 +221,12 @@ export function AgentManagementView({
     )));
   };
 
+  const handleToggleEnabled = (agent: AgentOption) => {
+    const enabled = agent.enabled === false;
+    ACPBridge.toggleAgentEnabled(agent.id, enabled);
+    setAgents(prev => prev.map(a => a.id === agent.id ? { ...a, enabled } : a));
+  };
+
   const handleAuth = (agent: AgentOption) => {
     if (authIds.has(agent.id) || agent.authenticating || agent.authLoading) return;
     setAuthIds(prev => new Set(prev).add(agent.id));
@@ -271,6 +280,8 @@ export function AgentManagementView({
           {agents.map((agent, index) => {
             const isDownloadedKnown = agent.downloadedKnown === true;
             const isDownloaded = agent.downloaded === true;
+            const isSystemAvailable = agent.runtimeSource === 'system';
+            const isEnabled = agent.enabled !== false;
             const isInstalling = installingIds.has(agent.id) || agent.downloading;
             const isDeleting = deletingIds.has(agent.id);
             const isProcessing = isInstalling || isDeleting;
@@ -282,7 +293,7 @@ export function AgentManagementView({
             const initializationDetail = agent.initializationDetail?.trim();
             const isAuthKnown = isManageAuth || agent.hasAuthentication !== true || agent.authKnown === true;
             const canResolveStatus = isDownloaded && agent.readyKnown === true && isAuthKnown;
-            const isStatusUnknown = isDownloaded && !isStarting && !canResolveStatus;
+            const isStatusUnknown = isDownloaded && !isStarting && !canResolveStatus && !isSystemAvailable;
             const canUpdate = isDownloaded && agent.updateAvailable === true && !isInstalling;
             const agentVersionSuffix = agent.agentVersion ? ` (v${agent.agentVersion})` : '';
             const versionLabel = agent.installedVersion
@@ -290,7 +301,11 @@ export function AgentManagementView({
                   ? `v${agent.installedVersion}${agentVersionSuffix} -> v${agent.latestVersion}`
                   : `v${agent.installedVersion}${agentVersionSuffix}`)
               : null;
-            const statusLabel = isStarting
+            const statusLabel = isSystemAvailable && !isEnabled
+              ? 'Available'
+              : isSystemAvailable && !isStarting && agent.ready !== true
+              ? 'Available'
+              : isStarting
               ? 'Starting'
               : (agent.hasAuthentication === true && agent.authKnown === true && agent.authAuthenticated === false)
                 ? 'Not logged in'
@@ -301,7 +316,7 @@ export function AgentManagementView({
                 : 'Not ready';
             const statusClass = isStarting
               ? 'text-foreground-secondary'
-              : statusLabel === 'Ready'
+              : statusLabel === 'Ready' || statusLabel === 'Available'
                 ? 'text-success'
                 : 'text-error';
 
@@ -357,30 +372,30 @@ export function AgentManagementView({
                         </div>
                       )}
 
-                      {!isInstalling && isDownloaded && agent.ready === true && agent.id === 'claude-code' && (
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && agent.ready === true && agent.id === 'claude-code' && (
                         <UsageSection>
                           <ClaudeUsage key={refreshKey} />
                         </UsageSection>
                       )}
-                      {!isInstalling && isDownloaded && agent.ready === true && agent.id === 'gemini-cli' && (
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && agent.ready === true && agent.id === 'gemini-cli' && (
                         <UsageSection>
                           <GeminiUsage key={refreshKey} disabledModels={agent.disabledModels} />
                         </UsageSection>
                       )}
-                      {!isInstalling && isDownloaded && agent.ready === true && agent.id === 'codex' && (
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && agent.ready === true && agent.id === 'codex' && (
                         <UsageSection>
                           <CodexUsage key={refreshKey} />
                         </UsageSection>
                       )}
-                      {!isInstalling && isDownloaded && agent.ready === true && agent.id === 'github-copilot-cli' && <CopilotUsageSection refreshKey={refreshKey} />}
-                      {!isInstalling && isDownloaded && agent.ready === true && agent.id === 'cursor-cli' && <CursorUsage />}
-                      {!isInstalling && isDownloaded && agent.ready === true && agent.id === 'qoder' && (
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && agent.ready === true && agent.id === 'github-copilot-cli' && <CopilotUsageSection refreshKey={refreshKey} />}
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && agent.ready === true && agent.id === 'cursor-cli' && <CursorUsage />}
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && agent.ready === true && agent.id === 'qoder' && (
                         <UsageSection>
                           <QoderUsage />
                         </UsageSection>
                       )}
 
-                      {!isInstalling && isDownloaded && (
+                      {!isInstalling && isDownloaded && (!isSystemAvailable || isEnabled) && (
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
                           {agent.hasAuthentication && !isManageAuth && agent.authKnown === true && (
                             <button
@@ -434,6 +449,13 @@ export function AgentManagementView({
                         variant="install"
                       >
                         Install
+                      </Button>
+                    ) : isSystemAvailable ? (
+                      <Button
+                        onClick={() => handleToggleEnabled(agent)}
+                        variant={isEnabled ? 'accentOutline' : 'install'}
+                      >
+                        {isEnabled ? 'Disable' : 'Enable'}
                       </Button>
                     ) : (
                       <>
