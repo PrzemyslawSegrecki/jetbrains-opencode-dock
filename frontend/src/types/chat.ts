@@ -119,6 +119,7 @@ export interface AgentOption {
   downloading?: boolean;
   downloadStatus?: string;
   disabledModels?: string[];
+  hiddenModels?: string[];
   hasAuthentication?: boolean;
   authAuthenticated?: boolean;
   authKnown?: boolean;
@@ -480,6 +481,7 @@ declare global {
     __deleteAgent?: (adapterId: string) => void;
     __updateAgent?: (adapterId: string) => void;
     __toggleAgentEnabled?: (payload: { adapterId: string; enabled: boolean }) => void;
+    __setHiddenModels?: (payload: { adapterId: string; modelIds: string[] }) => void;
     __requestHistoryList?: (projectPath?: string) => void;
     __syncHistoryList?: (projectPath?: string) => void;
     __deleteHistoryConversations?: (payload: { projectPath: string; conversationIds: string[] }) => void;

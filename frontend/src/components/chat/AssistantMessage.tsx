@@ -3,7 +3,7 @@ import type { ExploringBlock, Message, RichContentBlock, TextBlock } from '../..
 import { MarkdownMessage } from './MarkdownMessage';
 import { ContentBlockRenderer } from './blocks/ContentBlockRenderer';
 import { Tooltip } from './shared/Tooltip';
-import { GitFork, RotateCcw } from 'lucide-react';
+import { GitFork } from 'lucide-react';
 
 interface AssistantMessageProps {
   message: Message;
@@ -12,7 +12,6 @@ interface AssistantMessageProps {
   agentIconPath?: string;
   isActivePrompt?: boolean;
   onFork?: () => void;
-  onRevert?: () => void;
 }
 
 function formatDuration(seconds?: number): string | null {
@@ -69,7 +68,7 @@ function groupAssistantBlocks(blocks: RichContentBlock[]) {
   return groups;
 }
 
-export const AssistantMessage = memo(({ message, onImageClick, showBorder, agentIconPath, isActivePrompt = false, onFork, onRevert }: AssistantMessageProps) => {
+export const AssistantMessage = memo(({ message, onImageClick, showBorder, agentIconPath, isActivePrompt = false, onFork }: AssistantMessageProps) => {
   const renderContent = () => {
     if (message.contentBlocks && message.contentBlocks.length > 0) {
       const groupedBlocks = groupAssistantBlocks(message.contentBlocks);
@@ -149,23 +148,9 @@ export const AssistantMessage = memo(({ message, onImageClick, showBorder, agent
         </div>
       </div>
 
-      <div className={showMeta || onFork || onRevert || showBorder ? 'mt-8' : ''}>
-        {(showMeta || onFork || onRevert) && (
+      <div className={showMeta || onFork || showBorder ? 'mt-8' : ''}>
+        {(showMeta || onFork) && (
           <div className="flex justify-end items-center gap-2 mb-4 text-foreground-secondary">
-            {onRevert && (
-              <Tooltip content="Revert to here" variant="minimal">
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded text-foreground-secondary
-                  hover:bg-hover hover:text-foreground focus-visible:shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]
-                  focus-visible:outline-none"
-                  onClick={onRevert}
-                  aria-label="Revert to here"
-                >
-                  <RotateCcw size={13} />
-                </button>
-              </Tooltip>
-            )}
             {onFork && (
               <Tooltip content="Fork from here" variant="minimal">
                 <button

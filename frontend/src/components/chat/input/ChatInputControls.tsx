@@ -7,8 +7,10 @@ import {
   Square,
 } from 'lucide-react';
 import { DropdownOption } from '../../../types/chat';
+import { ModelPickerGroup } from '../../../hooks/chatSession/agentSelection';
 import { SlashCommandItem } from './slashCommands';
 import ChatDropdown from '../ChatDropdown';
+import { GroupedModelDropdown } from '../GroupedModelDropdown';
 import { ChatUsageIndicator } from '../../usage/chat/ChatUsageIndicator';
 import { ContextUsageIndicator } from '../shared/ContextUsageIndicator';
 import { Tooltip } from '../shared/Tooltip';
@@ -20,7 +22,7 @@ interface ChatInputControlsProps {
   setSendMode: (mode: 'enter' | 'ctrl-enter') => void;
   plusMenuOptions: DropdownOption[];
   conversationId: string;
-  agentOptions: DropdownOption[];
+  modelGroups: ModelPickerGroup[];
   selectedAgentId: string;
   selectedModelId: string;
   selectedModeId: string;
@@ -54,7 +56,7 @@ export function ChatInputControls({
   setSendMode,
   plusMenuOptions,
   conversationId,
-  agentOptions,
+  modelGroups,
   selectedAgentId,
   selectedModelId,
   selectedModeId,
@@ -122,16 +124,19 @@ export function ChatInputControls({
           }}
         />
 
-        <ChatDropdown
-          value={selectedAgentId}
-          subValue={selectedModelId}
-          options={agentOptions}
-          placeholder="Select Agent"
+        <GroupedModelDropdown
+          selectedAgentId={selectedAgentId}
+          selectedModelId={selectedModelId}
+          groups={modelGroups}
+          placeholder="Select Model"
           disabled={isSending}
           collapsed={collapsedAgentDropdown}
-          showSubValueInTrigger={true}
-          onChange={onAgentChange}
-          onSubChange={(_agentId, modelId) => onModelChange(modelId, _agentId)}
+          onChange={(agentId, modelId) => {
+            if (agentId !== selectedAgentId) {
+              onAgentChange(agentId);
+            }
+            onModelChange(modelId, agentId);
+          }}
           className="ml-0.5"
         />
 

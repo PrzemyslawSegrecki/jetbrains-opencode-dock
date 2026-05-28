@@ -1,5 +1,19 @@
 import { AgentOption, DropdownOption, ModeOption } from '../../types/chat';
 
+export type ModelPickerOption = {
+  agentId: string;
+  modelId: string;
+  label: string;
+  description?: string;
+};
+
+export type ModelPickerGroup = {
+  agentId: string;
+  label: string;
+  iconPath?: string;
+  options: ModelPickerOption[];
+};
+
 export type PinnedAgentSnapshot = {
   id: string;
   name?: string;
@@ -40,6 +54,12 @@ export function resolveSelectedAgent(
   } as AgentOption;
 }
 
+export function getVisibleModels(agent: Pick<AgentOption, 'availableModels' | 'hiddenModels'>): NonNullable<AgentOption['availableModels']> {
+  const availableModels = agent.availableModels ?? [];
+  const hiddenModelIds = new Set((agent.hiddenModels ?? []).filter(Boolean));
+  return availableModels.filter((model) => !hiddenModelIds.has(model.modelId));
+}
+
 export function buildAgentOptions(
   availableAgents: AgentOption[],
   pinnedSnapshot: PinnedAgentSnapshot | null,
@@ -49,7 +69,7 @@ export function buildAgentOptions(
     id: agent.id,
     label: agent.name,
     iconPath: agent.iconPath,
-    subOptions: agent.availableModels?.map(m => ({
+    subOptions: getVisibleModels(agent).map(m => ({
       id: m.modelId,
       label: m.name,
       description: m.description,
@@ -79,6 +99,61 @@ export function buildAgentOptions(
   }
 
   return options;
+}
+
+export function buildModelPickerGroups(
+  availableAgents: AgentOption[],
+  pinnedSnapshot: PinnedAgentSnapshot | null,
+  pinnedAgentId: string
+): ModelPickerGroup[] {
+  const groups = availableAgents.map((agent) => ({
+    agentId: agent.id,
+    label: agent.name,
+    iconPath: agent.iconPath,
+    options: getVisibleModels(agent).map((model) => ({
+      agentId: agent.id,
+      modelId: model.modelId,
+      label: model.name,
+      description: model.description,
+    })),
+  })).filter((group) => group.options.length > 0);
+
+  if (
+    pinnedSnapshot &&
+    pinnedAgentId &&
+    pinnedSnapshot.id === pinnedAgentId &&
+    !groups.some((group) => group.agentId === pinnedAgentId)
+  ) {
+    const pinnedOptions = (pinnedSnapshot.availableModels ?? []).map((model) => ({
+      agentId: pinnedSnapshot.id,
+      modelId: model.modelId,
+      label: model.name,
+      description: model.description,
+    }));
+
+    if (pinnedOptions.length > 0) {
+      groups.unshift({
+        agentId: pinnedSnapshot.id,
+        label: pinnedSnapshot.name || pinnedSnapshot.id,
+        iconPath: pinnedSnapshot.iconPath,
+        options: pinnedOptions,
+      });
+    } else if (pinnedSnapshot.currentModelId) {
+      groups.unshift({
+        agentId: pinnedSnapshot.id,
+        label: pinnedSnapshot.name || pinnedSnapshot.id,
+        iconPath: pinnedSnapshot.iconPath,
+        options: [{
+          agentId: pinnedSnapshot.id,
+          modelId: pinnedSnapshot.currentModelId,
+          label: pinnedSnapshot.currentModelId,
+          description: undefined,
+        }],
+      });
+    }
+  }
+
+  return groups;
 }
 
 export function buildModeOptions(availableModes: ModeOption[], selectedModeId: string): DropdownOption[] {

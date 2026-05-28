@@ -16,7 +16,7 @@ export default function ChatInput(props: ChatInputProps) {
     onSend,
     onStop,
     isSending,
-    agentOptions,
+    modelGroups,
     selectedAgentId,
     onAgentChange,
     selectedModelId,
@@ -114,7 +114,7 @@ export default function ChatInput(props: ChatInputProps) {
             setSendMode={setSendMode}
             plusMenuOptions={plusMenuOptions}
             conversationId={conversationId}
-            agentOptions={agentOptions}
+            modelGroups={modelGroups}
             selectedAgentId={selectedAgentId}
             selectedModelId={selectedModelId}
             selectedModeId={selectedModeId}

@@ -146,6 +146,7 @@ private fun AcpBridge.buildAdapterPayload(
     val readyKnown = isReady != null
 
     val savedPreference = AcpAgentPreferencesStore.preferenceFor(info.id)
+    val hiddenModels = AcpAgentPreferencesStore.hiddenModelIdsFor(info.id).toList().sorted()
     val rawRuntimeMetadata = service.adapterRuntimeMetadata(info.id)
         ?: AcpClientService.AdapterRuntimeMetadata(
             currentModelId = null,
@@ -210,6 +211,7 @@ private fun AcpBridge.buildAdapterPayload(
         downloading = isDownloading,
         downloadStatus = dlStatus,
         disabledModels = info.disabledModels,
+        hiddenModels = hiddenModels,
         cliAvailable = cliAvailable
     )
 }

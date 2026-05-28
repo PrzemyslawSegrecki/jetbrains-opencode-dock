@@ -3,6 +3,7 @@ import { ChevronDown, Menu, Plus } from 'lucide-react';
 import { AgentOption, ChatTab, TabUiFlags, isAgentRunnable } from '../types/chat';
 import { HamburgerMenuPanel } from './tabbar/HamburgerMenuPanel';
 import { TabItem } from './tabbar/TabItem';
+import { HistoryTabIcon } from './tabbar/TabIcons';
 import { TabOverflowMenu } from './tabbar/TabOverflowMenu';
 import { focusMenuItem } from './tabbar/menuFocus';
 
@@ -47,7 +48,7 @@ export default function TabBar({
 }: TabBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false);
-  const [tabFocusedControl, setTabFocusedControl] = useState<'new' | 'menu' | 'hamburger' | null>(null);
+  const [tabFocusedControl, setTabFocusedControl] = useState<'new' | 'menu' | 'history' | 'hamburger' | null>(null);
   const [focusedTabId, setFocusedTabId] = useState<string | null>(null);
   const [tabsViewportWidth, setTabsViewportWidth] = useState(0);
   const [dropTarget, setDropTarget] = useState<{ id: string; position: 'before' | 'after' } | null>(null);
@@ -308,6 +309,23 @@ export default function TabBar({
             />
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMenuOpen(false);
+            setHamburgerMenuOpen(false);
+            onOpenHistory();
+          }}
+          onFocus={() => setTabFocusedControl(lastInteractionWasTabRef.current ? 'history' : null)}
+          onBlur={() => setTabFocusedControl((current) => current === 'history' ? null : current)}
+          className={`flex items-center justify-center w-[28px] h-[24px] rounded bg-background transition-colors
+            focus:outline-none hover:text-foreground hover:bg-hover
+            ${tabFocusedControl === 'history' ? 'shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]' : ''}`}
+          aria-label="Open history"
+        >
+          <HistoryTabIcon />
+        </button>
 
         {/* Hamburger Menu */}
         <div className="relative" ref={hamburgerRef}>

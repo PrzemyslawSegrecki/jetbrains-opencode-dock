@@ -1,5 +1,6 @@
 import { MutableRefObject, useEffect, useState } from 'react';
 import { AgentOption, HistorySessionMeta } from '../../types/chat';
+import { getVisibleModels } from './agentSelection';
 
 type UseAgentRuntimeOptionsArgs = {
   availableAgents: AgentOption[];
@@ -26,11 +27,22 @@ export function useAgentRuntimeOptions({
 }: UseAgentRuntimeOptionsArgs) {
   const [selectedModelByAgent, setSelectedModelByAgent] = useState<Record<string, string>>({});
   const [selectedModeByAgent, setSelectedModeByAgent] = useState<Record<string, string>>({});
-  const availableModels = effectiveSelectedAgent?.availableModels ?? [];
+  const availableModels = effectiveSelectedAgent ? getVisibleModels(effectiveSelectedAgent) : [];
   const availableModes = effectiveSelectedAgent?.availableModes ?? [];
 
+  const resolveVisibleModelId = (agent: AgentOption | undefined, preferredModelId?: string) => {
+    if (!agent) return '';
+    const visibleModels = getVisibleModels(agent);
+    if (preferredModelId && visibleModels.some((model) => model.modelId === preferredModelId)) {
+      return preferredModelId;
+    }
+    return agent.currentModelId && visibleModels.some((model) => model.modelId === agent.currentModelId)
+      ? agent.currentModelId
+      : visibleModels[0]?.modelId || '';
+  };
+
   const selectedModelId = effectiveSelectedAgent
-    ? (selectedModelByAgent[effectiveSelectedAgent.id] || effectiveSelectedAgent.currentModelId || availableModels[0]?.modelId || '')
+    ? resolveVisibleModelId(effectiveSelectedAgent, selectedModelByAgent[effectiveSelectedAgent.id])
     : '';
 
   const selectedModeId = effectiveSelectedAgent
@@ -38,7 +50,7 @@ export function useAgentRuntimeOptions({
     : '';
 
   const modelIdForStart = selectedAgentId
-    ? (selectedModelByAgent[selectedAgentId] || effectiveSelectedAgent?.currentModelId || '')
+    ? resolveVisibleModelId(effectiveSelectedAgent, selectedModelByAgent[selectedAgentId])
     : '';
 
   useEffect(() => {
@@ -47,7 +59,7 @@ export function useAgentRuntimeOptions({
       const next: Record<string, string> = { ...prev };
       availableAgents.forEach((agent) => {
         if (next[agent.id]) return;
-        const currentModel = agent.currentModelId || agent.availableModels?.[0]?.modelId || '';
+        const currentModel = resolveVisibleModelId(agent, next[agent.id]);
         if (currentModel) next[agent.id] = currentModel;
       });
       return next;

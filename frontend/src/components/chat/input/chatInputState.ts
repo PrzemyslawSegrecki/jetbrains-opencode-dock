@@ -4,6 +4,7 @@ import {
   ChatAttachment,
   DropdownOption,
 } from '../../../types/chat';
+import { ModelPickerGroup } from '../../../hooks/chatSession/agentSelection';
 
 export interface ChatInputProps {
   conversationId: string;
@@ -14,7 +15,7 @@ export interface ChatInputProps {
   onSend: () => void;
   onStop: () => void;
   isSending: boolean;
-  agentOptions: DropdownOption[];
+  modelGroups: ModelPickerGroup[];
   selectedAgentId: string;
   onAgentChange: (id: string) => void;
   selectedModelId: string;

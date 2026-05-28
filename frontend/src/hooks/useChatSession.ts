@@ -21,7 +21,7 @@ import {
 import { buildPromptBlocks } from './chatSession/promptBlocks';
 import {
   PinnedAgentSnapshot,
-  buildAgentOptions,
+  buildModelPickerGroups,
   buildModeOptions,
   resolveSelectedAgent,
   toPinnedAgentSnapshot,
@@ -88,6 +88,52 @@ export function useChatSession(
     markFlushUnscheduled,
   } = useBufferedMessageChunks({ setHistoryMessages, setLiveMessages });
 
+  const buildRevertAttachments = useCallback((message: Message): ChatAttachment[] => {
+    return (message.blocks ?? []).flatMap((block, index) => {
+      if (block.type === 'file') {
+        const attachment: ChatAttachment = {
+          id: `revert-file-${index}-${Date.now()}`,
+          name: block.name,
+          mimeType: block.mimeType,
+          data: block.data,
+          path: block.path,
+          isInline: block.isInline,
+          attachmentType: 'file',
+        };
+        return [attachment];
+      }
+
+      if (block.type === 'image') {
+        const attachment: ChatAttachment = {
+          id: `revert-image-${index}-${Date.now()}`,
+          name: 'Image',
+          mimeType: block.mimeType,
+          data: block.data,
+          path: undefined,
+          isInline: block.isInline,
+          attachmentType: 'file',
+        };
+        return [attachment];
+      }
+
+      if (block.type === 'code_ref') {
+        const attachment: ChatAttachment = {
+          id: block.id || `revert-code-ref-${index}-${Date.now()}`,
+          name: block.name,
+          mimeType: 'text/plain',
+          data: undefined,
+          path: block.path,
+          attachmentType: 'code_ref',
+          startLine: block.startLine,
+          endLine: block.endLine,
+        };
+        return [attachment];
+      }
+
+      return [];
+    });
+  }, []);
+
   const finishActivePromptAfterError = useCallback(() => {
     pendingPromptRef.current = null;
     setPermissionQueue([]);
@@ -153,8 +199,8 @@ export function useChatSession(
   });
 
   const adapterDisplayName = resolvedSelectedAgent?.name || '';
-  const agentOptions = useMemo(
-    () => buildAgentOptions(availableAgents, pinnedAgentSnapshotRef.current, pinnedAgentId),
+  const modelGroups = useMemo(
+    () => buildModelPickerGroups(availableAgents, pinnedAgentSnapshotRef.current, pinnedAgentId),
     [availableAgents, pinnedAgentId]
   );
   const modeOptions = useMemo(
@@ -603,22 +649,21 @@ export function useChatSession(
     }
   };
 
-  const handleRevertToMessage = useCallback((messageId: string, handoffText?: string) => {
+  const handleRevertToMessage = useCallback((messageId: string) => {
     const allMessages = [...historyMessages, ...liveMessages];
     const messageIndex = allMessages.findIndex((m) => m.id === messageId);
     if (messageIndex < 0) return;
 
-    let endExclusive = messageIndex + 1;
-    if (allMessages[messageIndex].role === 'user' && allMessages[messageIndex + 1]?.role === 'assistant') {
-      endExclusive += 1;
-    }
+    const targetMessage = allMessages[messageIndex];
+    if (targetMessage.role !== 'user') return;
 
-    const keepMessages = allMessages.slice(0, endExclusive);
+    const keepMessages = allMessages.slice(0, messageIndex);
     const promptCount = keepMessages.filter((m) => m.role === 'user').length;
-    if (promptCount <= 0) return;
 
     setHistoryMessages(keepMessages);
     setLiveMessages([]);
+    setInputValue(targetMessage.content || '');
+    setAttachments(buildRevertAttachments(targetMessage));
     setIsSending(false);
     setPermissionQueue([]);
     pendingPromptRef.current = null;
@@ -630,7 +675,7 @@ export function useChatSession(
     startedModelIdRef.current = '';
     startedModeIdRef.current = '';
     canRestartHistorySessionRef.current = true;
-    revertHandoffTextRef.current = handoffText?.trim() || null;
+    revertHandoffTextRef.current = null;
     initialUserMessageCountRef.current = promptCount;
     allowMetadataUpdateRef.current = !historySession;
     touchUpdatedAtRef.current = !historySession;
@@ -649,7 +694,7 @@ export function useChatSession(
           startSelectedAgent();
         }
       });
-  }, [conversationId, historyMessages, liveMessages, historySession, clearBufferedChunks, markFlushUnscheduled, startSelectedAgent]);
+  }, [buildRevertAttachments, clearBufferedChunks, conversationId, historyMessages, historySession, liveMessages, markFlushUnscheduled, startSelectedAgent]);
 
   const handlePermissionDecision = (decision: string) => {
     if (!permissionRequest) return;
@@ -672,7 +717,7 @@ export function useChatSession(
     isSending,
     isHistoryReplaying,
     selectedAgentId,
-    agentOptions,
+    modelGroups,
     selectedModelId,
     handleModelChange,
     selectedModeId,

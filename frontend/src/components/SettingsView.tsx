@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { AgentOption, AudioTranscriptionFeatureState, AudioTranscriptionSettings, GitCommitGenerationSettings as GitCommitGenerationSettingsValue, GlobalSettingsPayload } from '../types/chat';
 import { ACPBridge } from '../utils/bridge';
 import ConfirmationModal from './ConfirmationModal';
@@ -100,6 +100,41 @@ function applyUserMessageTheme(styleId: GlobalSettingsPayload['settings']['userM
   document.documentElement.style.setProperty('--user-message-bg', selected.background);
 }
 
+function isModelVisible(agent: AgentOption, modelId: string): boolean {
+  return !(agent.hiddenModels ?? []).includes(modelId);
+}
+
+function normalizeHiddenModelIds(modelIds: string[]): string[] {
+  return Array.from(new Set(modelIds.filter(Boolean))).sort();
+}
+
+function sameHiddenModelIds(left: string[] | undefined, right: string[] | undefined): boolean {
+  const normalizedLeft = normalizeHiddenModelIds(left ?? []);
+  const normalizedRight = normalizeHiddenModelIds(right ?? []);
+  if (normalizedLeft.length !== normalizedRight.length) return false;
+  return normalizedLeft.every((value, index) => value === normalizedRight[index]);
+}
+
+function buildHiddenModelsForVisibility(agent: AgentOption, modelIds: string[], visible: boolean): string[] {
+  const hiddenModels = new Set(agent.hiddenModels ?? []);
+  modelIds.forEach((modelId) => {
+    if (visible) {
+      hiddenModels.delete(modelId);
+      return;
+    }
+    hiddenModels.add(modelId);
+  });
+  return normalizeHiddenModelIds(Array.from(hiddenModels));
+}
+
+function applyHiddenModelsToAgents(agents: AgentOption[], adapterId: string, hiddenModels: string[]): AgentOption[] {
+  return agents.map((agent) => (
+    agent.id === adapterId
+      ? { ...agent, hiddenModels }
+      : agent
+  ));
+}
+
 export function SettingsView() {
   const [feature, setFeature] = useState<AudioTranscriptionFeatureState>(emptyState);
   const [settings, setSettings] = useState<AudioTranscriptionSettings>({ language: 'auto' });
@@ -107,6 +142,8 @@ export function SettingsView() {
   const [installedAgents, setInstalledAgents] = useState<AgentOption[]>([]);
   const [pendingAudioInputUninstall, setPendingAudioInputUninstall] = useState(false);
   const [uiFontSizeBasePx, setUiFontSizeBasePx] = useState(() => readIdeFontSizePx());
+  const installedAgentsRef = useRef<AgentOption[]>([]);
+  const lastToggledModelIndexByAdapterRef = useRef<Record<string, number>>({});
   const uiFontSizeOptions = Array.from({ length: 7 }, (_, index) => {
     const offset = index - 3;
     const px = uiFontSizeBasePx + offset;
@@ -132,6 +169,14 @@ export function SettingsView() {
     applyUserMessageTheme(globalSettings.settings.userMessageBackgroundStyle);
   }, [globalSettings.settings.userMessageBackgroundStyle]);
 
+  const updateInstalledAgents = (updater: (prev: AgentOption[]) => AgentOption[]) => {
+    setInstalledAgents((prev) => {
+      const next = updater(prev);
+      installedAgentsRef.current = next;
+      return next;
+    });
+  };
+
   useEffect(() => {
     const requestSettings = () => {
       ACPBridge.loadAudioTranscriptionFeature();
@@ -153,6 +198,7 @@ export function SettingsView() {
       const nextInstalledAgents = Array.isArray(e.detail.adapters)
         ? e.detail.adapters.filter((agent) => agent.downloaded === true)
         : [];
+      installedAgentsRef.current = nextInstalledAgents;
       setInstalledAgents(nextInstalledAgents);
     });
 
@@ -227,6 +273,42 @@ export function SettingsView() {
     ACPBridge.saveGlobalSettings(next);
   };
 
+  const persistHiddenModels = (adapterId: string, hiddenModels: string[]) => {
+    updateInstalledAgents((prev) => applyHiddenModelsToAgents(prev, adapterId, hiddenModels));
+    ACPBridge.setHiddenModels({ adapterId, modelIds: hiddenModels });
+  };
+
+  const handleModelVisibilityChange = (adapterId: string, modelIds: string[], visible: boolean) => {
+    const agent = installedAgentsRef.current.find((item) => item.id === adapterId);
+    if (!agent) return;
+
+    const nextHiddenModels = buildHiddenModelsForVisibility(agent, modelIds, visible);
+    if (sameHiddenModelIds(agent.hiddenModels, nextHiddenModels)) return;
+    persistHiddenModels(adapterId, nextHiddenModels);
+  };
+
+  const handleModelVisibilityInputChange = (agent: AgentOption, modelId: string, event: ChangeEvent<HTMLInputElement>) => {
+    const availableModels = agent.availableModels ?? [];
+    const currentIndex = availableModels.findIndex((model) => model.modelId === modelId);
+    if (currentIndex < 0) return;
+
+    const lastIndex = lastToggledModelIndexByAdapterRef.current[agent.id];
+    lastToggledModelIndexByAdapterRef.current[agent.id] = currentIndex;
+    const shiftPressed = 'shiftKey' in event.nativeEvent && Boolean((event.nativeEvent as MouseEvent).shiftKey);
+
+    if (shiftPressed && typeof lastIndex === 'number' && lastIndex >= 0) {
+      const startIndex = Math.min(lastIndex, currentIndex);
+      const endIndex = Math.max(lastIndex, currentIndex);
+      const modelIds = availableModels.slice(startIndex, endIndex + 1).map((model) => model.modelId);
+      handleModelVisibilityChange(agent.id, modelIds, event.target.checked);
+      return;
+    }
+
+    handleModelVisibilityChange(agent.id, [modelId], event.target.checked);
+  };
+
+  const agentsWithModels = installedAgents.filter((agent) => (agent.availableModels?.length ?? 0) > 0);
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto w-full px-2 py-2">
@@ -286,6 +368,68 @@ export function SettingsView() {
             onToggle={() => handleQuotaWidgetEnabledChange(!globalSettings.settings.quotaWidgetEnabled)}
             ariaLabel="Enable status bar quota widget"
           />
+
+          <SettingsCardShell
+            title="Visible Models"
+            description="Choose which models should appear in the chat model picker for each provider"
+          >
+            <div className="flex flex-col gap-3">
+              {agentsWithModels.length === 0 ? (
+                <div className="text-foreground-secondary">No installed providers with model lists available yet.</div>
+              ) : agentsWithModels.map((agent) => {
+                const hiddenModels = new Set(agent.hiddenModels ?? []);
+                const visibleCount = (agent.availableModels ?? []).filter((model) => !hiddenModels.has(model.modelId)).length;
+
+                return (
+                  <div key={agent.id} className="rounded-[6px] border border-border px-3 py-3">
+                    <div className="mb-2 flex items-center gap-2">
+                      {agent.iconPath ? <img src={agent.iconPath} alt="" className="h-4 w-4" /> : null}
+                      <span className="font-medium">{agent.name}</span>
+                      <span className="text-foreground-secondary text-ide-small">{visibleCount}/{agent.availableModels?.length ?? 0} visible</span>
+                      <div className="ml-auto flex items-center gap-1.5">
+                        <Button
+                          variant="secondary"
+                          className="min-w-0 px-2 py-1 text-ide-small"
+                          onClick={() => handleModelVisibilityChange(agent.id, (agent.availableModels ?? []).map((model) => model.modelId), true)}
+                        >
+                          Show all
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="min-w-0 px-2 py-1 text-ide-small"
+                          onClick={() => handleModelVisibilityChange(agent.id, (agent.availableModels ?? []).map((model) => model.modelId), false)}
+                        >
+                          Hide all
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {(agent.availableModels ?? []).map((model) => {
+                        const visible = isModelVisible(agent, model.modelId);
+
+                        return (
+                          <label key={model.modelId} className={`flex items-start gap-2 rounded-[4px] px-2 py-1.5 ${visible ? 'hover:bg-hover' : 'opacity-85 hover:bg-hover'}`}>
+                            <input
+                              type="checkbox"
+                              checked={visible}
+                              onChange={(event) => handleModelVisibilityInputChange(agent, model.modelId, event)}
+                              className="mt-[2px]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate">{model.name}</span>
+                              {model.description ? (
+                                <span className="block text-foreground-secondary text-ide-small">{model.description}</span>
+                              ) : null}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </SettingsCardShell>
 
           <GitCommitGenerationSettings
             settings={globalSettings.settings.gitCommitGeneration}

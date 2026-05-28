@@ -457,6 +457,18 @@ internal fun AcpBridge.installAdapterQueries() {
         }
     }
 
+    setHiddenModelsQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
+        addHandler { payload ->
+            val parsed = parseHiddenModelsPayload(payload)
+            val adapterId = parsed.adapterId.orEmpty()
+            if (adapterId.isNotBlank()) {
+                AcpAgentPreferencesStore.setHiddenModels(adapterId, parsed.modelIds)
+                scope.launch(Dispatchers.IO) { pushAdapters() }
+            }
+            JBCefJSQuery.Response("ok")
+        }
+    }
+
     loginAgentQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
         addHandler { payload ->
             val adapterId = parseIdOnlyPayload(payload)

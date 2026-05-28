@@ -73,7 +73,7 @@ export default function ChatSessionView({
     status,
     isSending,
     isHistoryReplaying,
-    agentOptions,
+    modelGroups,
     selectedAgentId,
     selectedModelId,
     handleModelChange,
@@ -234,35 +234,8 @@ export default function ChatSessionView({
   }, [conversationId, messages, onForkRequest, selectedAgentId]);
 
   const handleRevertFromMessage = useCallback((messageId: string) => {
-    const messageIndex = messages.findIndex((message) => message.id === messageId);
-    if (messageIndex < 0) return;
-
-    let endExclusive = messageIndex + 1;
-    if (messages[messageIndex].role === 'user' && messages[messageIndex + 1]?.role === 'assistant') {
-      endExclusive += 1;
-    }
-
-    const revertedMessages = messages.slice(0, endExclusive);
-    const prepared = prepareConversationHandoff(revertedMessages, []);
-
-    const finish = (handoffText: string) => {
-      handleRevertToMessage(messageId, handoffText);
-    };
-
-    if (!prepared.exceedsInlineLimit) {
-      finish(prepared.handoffText);
-      return;
-    }
-
-    ACPBridge.saveConversationTranscript(conversationId, prepared.normalizedTranscript)
-      .then((saved) => {
-        finish(buildConversationHandoffFromTranscriptFile(prepared, saved.filePath || ''));
-      })
-      .catch((error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        finish(buildConversationHandoffSaveFailureContext(prepared, message));
-      });
-  }, [conversationId, handleRevertToMessage, messages]);
+    handleRevertToMessage(messageId);
+  }, [handleRevertToMessage]);
 
   return (
     <div className="flex flex-col h-full relative overflow-hidden bg-background">
@@ -335,8 +308,8 @@ export default function ChatSessionView({
             isSending={isSending}
             usageSessionKey={acpSessionId || undefined}
             status={status}
-            
-            agentOptions={agentOptions}
+
+            modelGroups={modelGroups}
             selectedAgentId={selectedAgentId}
             onAgentChange={handleAgentChange}
             

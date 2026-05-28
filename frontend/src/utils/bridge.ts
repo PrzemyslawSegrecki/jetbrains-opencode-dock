@@ -1,4 +1,5 @@
 import {
+  AgentOption,
   AvailableCommand,
   AudioTranscriptionResultPayload,
   AudioTranscriptionSettings,
@@ -54,8 +55,46 @@ let bridgeOperationCounter = 0;
 const availableCommandsByAdapter = new Map<string, AvailableCommand[]>();
 const pendingRpcMethodsById = new Map<string | number, string>();
 const toolCallRawInputById = new Map<string, Record<string, any>>();
+const hiddenModelOverridesByAdapter = new Map<string, string[]>();
+let latestAdaptersSnapshot: AgentOption[] = [];
 const BRIDGE_REQUEST_TIMEOUT_MS = 120_000;
 const BRIDGE_OPERATION_TIMEOUT_MS = 10_000;
+
+function normalizeModelIds(modelIds: string[] | undefined): string[] {
+  return Array.from(new Set((modelIds ?? []).filter(Boolean))).sort();
+}
+
+function sameModelIdList(left: string[] | undefined, right: string[] | undefined): boolean {
+  const normalizedLeft = normalizeModelIds(left);
+  const normalizedRight = normalizeModelIds(right);
+  if (normalizedLeft.length !== normalizedRight.length) return false;
+  return normalizedLeft.every((value, index) => value === normalizedRight[index]);
+}
+
+function applyHiddenModelOverrides(adapters: AgentOption[]): AgentOption[] {
+  return adapters.map((adapter) => {
+    const normalizedIncoming = normalizeModelIds(adapter.hiddenModels);
+    const pendingOverride = hiddenModelOverridesByAdapter.get(adapter.id);
+
+    if (pendingOverride && sameModelIdList(normalizedIncoming, pendingOverride)) {
+      hiddenModelOverridesByAdapter.delete(adapter.id);
+    }
+
+    const effectiveHiddenModels = hiddenModelOverridesByAdapter.get(adapter.id);
+    if (!effectiveHiddenModels) {
+      return normalizedIncoming === adapter.hiddenModels
+        ? adapter
+        : { ...adapter, hiddenModels: normalizedIncoming };
+    }
+
+    return { ...adapter, hiddenModels: effectiveHiddenModels };
+  });
+}
+
+function emitAdapters(adapters: AgentOption[]) {
+  latestAdaptersSnapshot = adapters;
+  window.dispatchEvent(new CustomEvent(EVENT_NAMES.ADAPTERS, { detail: { adapters } }));
+}
 
 function nextSaveTranscriptRequestId(): string {
   saveTranscriptCounter += 1;
@@ -174,7 +213,8 @@ export const ACPBridge = {
     };
 
     window.__onAdapters = (adapters) => {
-      window.dispatchEvent(new CustomEvent(EVENT_NAMES.ADAPTERS, { detail: { adapters } }));
+      const normalizedAdapters = Array.isArray(adapters) ? applyHiddenModelOverrides(adapters) : [];
+      emitAdapters(normalizedAdapters);
     };
 
     window.__onAvailableCommands = (adapterId, commands) => {
@@ -661,6 +701,21 @@ export const ACPBridge = {
 
   saveGlobalSettings: (settings: GlobalSettingsPayload['settings']) => {
     window.__saveGlobalSettings?.(JSON.stringify(settings));
+  },
+
+  setHiddenModels: (payload: { adapterId: string; modelIds: string[] }) => {
+    const nextHiddenModels = normalizeModelIds(payload.modelIds);
+    hiddenModelOverridesByAdapter.set(payload.adapterId, nextHiddenModels);
+
+    if (latestAdaptersSnapshot.length > 0) {
+      emitAdapters(latestAdaptersSnapshot.map((adapter) => (
+        adapter.id === payload.adapterId
+          ? { ...adapter, hiddenModels: nextHiddenModels }
+          : adapter
+      )));
+    }
+
+    window.__setHiddenModels?.(payload);
   },
 
   onGlobalSettings: (callback: (e: CustomEvent<GlobalSettingsEvent>) => void) => onBridgeEvent(EVENT_NAMES.GLOBAL_SETTINGS, callback),

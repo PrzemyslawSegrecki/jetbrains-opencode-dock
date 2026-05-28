@@ -321,7 +321,6 @@ function MessageList({
                 agentIconPath={resolvedAgentIconPath}
                 isActivePrompt={Boolean(isSending) && isLast}
                 onFork={!isSending && onForkFromMessage ? () => onForkFromMessage(message.id) : undefined}
-                onRevert={!isSending && onRevertToMessage ? () => onRevertToMessage(message.id) : undefined}
               />
             );
           }
@@ -332,6 +331,7 @@ function MessageList({
               message={message} 
               onImageClick={onImageClick}
               promptNumber={userPromptNumberById.get(message.id)}
+              onRevert={!isSending && onRevertToMessage ? () => onRevertToMessage(message.id) : undefined}
             />
           );
         })}

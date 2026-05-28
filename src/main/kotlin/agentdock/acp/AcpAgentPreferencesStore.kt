@@ -9,7 +9,8 @@ import java.io.File
 @Serializable
 data class AcpAgentPreference(
     val modelId: String = "",
-    val modeId: String = ""
+    val modeId: String = "",
+    val hiddenModelIds: Set<String> = emptySet()
 )
 
 @Serializable
@@ -106,6 +107,27 @@ object AcpAgentPreferencesStore {
         }
     }
 
+    fun hiddenModelIdsFor(adapterId: String): Set<String> {
+        val trimmedAdapterId = adapterId.trim()
+        if (trimmedAdapterId.isEmpty()) return emptySet()
+        return load().agents[trimmedAdapterId]?.hiddenModelIds.orEmpty()
+    }
+
+    fun setHiddenModels(adapterId: String, modelIds: Set<String>) {
+        val trimmedAdapterId = adapterId.trim()
+        if (trimmedAdapterId.isEmpty()) return
+        val normalizedModelIds = modelIds
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .toSet()
+        updateState { current ->
+            val existing = current.agents[trimmedAdapterId] ?: AcpAgentPreference()
+            current.copy(
+                lastAgentId = current.lastAgentId,
+                agents = current.agents + (trimmedAdapterId to existing.copy(hiddenModelIds = normalizedModelIds))
+            )
+        }
+    }
+
     private fun updateState(transform: (AcpAgentPreferencesState) -> AcpAgentPreferencesState): AcpAgentPreferencesState =
         synchronized(lock) {
             val file = stateFile()
@@ -127,9 +149,16 @@ object AcpAgentPreferencesStore {
             } else {
                 val normalizedPref = AcpAgentPreference(
                     modelId = pref.modelId.trim(),
-                    modeId = pref.modeId.trim()
+                    modeId = pref.modeId.trim(),
+                    hiddenModelIds = pref.hiddenModelIds
+                        .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                        .toSet()
                 )
-                if (normalizedPref.modelId.isEmpty() && normalizedPref.modeId.isEmpty()) {
+                if (
+                    normalizedPref.modelId.isEmpty() &&
+                    normalizedPref.modeId.isEmpty() &&
+                    normalizedPref.hiddenModelIds.isEmpty()
+                ) {
                     null
                 } else {
                     trimmedAdapterId to normalizedPref

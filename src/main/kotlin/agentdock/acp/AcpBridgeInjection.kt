@@ -26,6 +26,7 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val deleteAgentInject = deleteAgentQuery?.inject("adapterId") ?: ""
     val updateAgentInject = updateAgentQuery?.inject("adapterId") ?: ""
     val toggleAgentEnabledInject = toggleAgentEnabledQuery?.inject("JSON.stringify(payload)") ?: ""
+    val setHiddenModelsInject = setHiddenModelsQuery?.inject("JSON.stringify(payload)") ?: ""
     val loginAgentInject = loginAgentQuery?.inject("adapterId") ?: ""
     val logoutAgentInject = logoutAgentQuery?.inject("adapterId") ?: ""
     val fetchUsageInject = fetchUsageQuery?.inject("adapterId") ?: ""
@@ -99,6 +100,9 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
             };
             window.__toggleAgentEnabled = function(payload) {
                 try { $toggleAgentEnabledInject } catch (e) { }
+            };
+            window.__setHiddenModels = function(payload) {
+                try { $setHiddenModelsInject } catch (e) { }
             };
             window.__loginAgent = function(adapterId) {
                 try { $loginAgentInject } catch (e) { }

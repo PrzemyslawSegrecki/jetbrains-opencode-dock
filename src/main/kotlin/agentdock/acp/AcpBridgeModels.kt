@@ -57,6 +57,7 @@ internal data class AdapterPayload(
     val downloading: Boolean,
     val downloadStatus: String,
     val disabledModels: List<String>,
+    val hiddenModels: List<String>,
     val cliAvailable: Boolean
 )
 

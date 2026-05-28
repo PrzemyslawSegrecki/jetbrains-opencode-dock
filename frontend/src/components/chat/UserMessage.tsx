@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { Message, RichContentBlock, TextBlock, ImageBlock, FileBlock, CodeReferenceBlock } from '../../types/chat';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { AttachmentItem } from './shared/AttachmentItem';
 import { CodeReferenceChip } from './shared/CodeReferenceChip';
 import { openFile } from '../../utils/openFile';
+import { Tooltip } from './shared/Tooltip';
 
 interface UserMessageProps {
   message: Message;
   onImageClick: (src: string) => void;
   promptNumber?: number;
+  onRevert?: () => void;
 }
 
 function formatPromptTime(timestamp?: number): string | null {
@@ -43,7 +45,7 @@ function formatPromptTime(timestamp?: number): string | null {
   }
 }
 
-export const UserMessage = memo(({ message, onImageClick, promptNumber }: UserMessageProps) => {
+export const UserMessage = memo(({ message, onImageClick, promptNumber, onRevert }: UserMessageProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLargeContent, setIsLargeContent] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -194,7 +196,21 @@ export const UserMessage = memo(({ message, onImageClick, promptNumber }: UserMe
                   </button>
                 )}
 
-                <div className="flex items-center gap-1.5 text-xs text-foreground opacity-80">
+                <div className="flex items-center gap-2 text-xs text-foreground opacity-80">
+                  {onRevert && (
+                    <Tooltip content="Revert to this prompt" variant="minimal">
+                      <button
+                        type="button"
+                        onClick={onRevert}
+                        aria-label="Revert to this prompt"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-foreground-secondary
+                        hover:bg-hover hover:text-foreground focus-visible:shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]
+                        focus-visible:outline-none"
+                      >
+                        <RotateCcw size={12} />
+                      </button>
+                    </Tooltip>
+                  )}
                   {promptNumber !== undefined && <span>{`#${promptNumber}`}</span>}
                   {promptNumber !== undefined && formattedTime && <span aria-hidden="true">•</span>}
                   {formattedTime && <span>{formattedTime}</span>}

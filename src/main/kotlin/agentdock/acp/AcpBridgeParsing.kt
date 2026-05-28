@@ -24,6 +24,11 @@ internal data class ParsedCancelPayload(
     val chatId: String?
 )
 
+internal data class ParsedHiddenModelsPayload(
+    val adapterId: String?,
+    val modelIds: Set<String>
+)
+
 internal fun parseIdOnlyPayload(payload: String?): String? {
     return payload?.trim()?.takeIf { it.isNotEmpty() }
 }
@@ -68,6 +73,23 @@ internal fun parseConversationLoadPayload(payload: String?): Triple<String?, Str
         val conversationId = obj["conversationId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
         Triple(chatId, projectPath, conversationId)
     } catch (_: Exception) { Triple(null, null, null) }
+}
+
+internal fun parseHiddenModelsPayload(payload: String?): ParsedHiddenModelsPayload {
+    val raw = payload?.trim().orEmpty()
+    if (raw.isEmpty()) return ParsedHiddenModelsPayload(null, emptySet())
+    return try {
+        val obj = Json.parseToJsonElement(raw).jsonObject
+        val adapterId = obj["adapterId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+        val modelIds = obj["modelIds"]
+            ?.jsonArray
+            ?.mapNotNull { it.jsonPrimitive.contentOrNull?.trim()?.takeIf(String::isNotEmpty) }
+            ?.toSet()
+            .orEmpty()
+        ParsedHiddenModelsPayload(adapterId, modelIds)
+    } catch (_: Exception) {
+        ParsedHiddenModelsPayload(null, emptySet())
+    }
 }
 
 internal fun parseHistoryConversationCliPayload(payload: String?): Pair<String?, String?> {
