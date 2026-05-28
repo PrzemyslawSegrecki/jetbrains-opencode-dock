@@ -127,15 +127,15 @@ const FileChangesPanel = memo(({
                     key={fc.filePath}
                     className="flex items-center justify-between h-9 px-3 transition-colors"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       <span className={`font-mono w-4 text-center flex-shrink-0 font-bold ${
                         fc.status === 'A' ? 'text-added' : 'text-warning'
                       }`}>
                         {fc.status}
                       </span>
-                      <Tooltip variant="minimal" content={fc.filePath}>
+                      <Tooltip variant="minimal" content={fc.filePath} className="flex-1 min-w-0">
                         <button type="button"
-                          className={`truncate text-left text-foreground hover:underline transition-colors min-w-0 font-mono ${chatFocusClassName}`}
+                          className={`w-full truncate text-left text-foreground hover:underline transition-colors min-w-0 font-mono ${chatFocusClassName}`}
                           onClick={() => onOpenFile?.(fc.filePath)}
                         >
                           {getFileName(fc.filePath)}

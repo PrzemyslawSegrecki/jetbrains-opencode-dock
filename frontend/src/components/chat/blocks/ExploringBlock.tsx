@@ -85,11 +85,15 @@ export const ExploringBlock: React.FC<Props> = ({ block, isActivePrompt = false 
     }
   };
 
+  const entries = block.entries;
+  const isSingleNonThinking = entries.length === 1 && entries[0].kind !== 'thinking';
+  const label = buildLabel(entries, block.isStreaming);
+
   const renderEntries = () => (
     <div className="flex flex-col gap-1 px-[1px] py-1 w-full min-w-0">
       {block.entries.map((entry, i) => {
         if (entry.kind === 'thinking') {
-          return <ThinkingActivity key={entry.toolCallId || i} entry={entry} />;
+          return <ThinkingActivity key={entry.toolCallId || i} entry={entry} isExploring={label.startsWith('Explor')} />;
         }
         if (entry.kind === 'read') {
           return <ReadActivity key={entry.toolCallId || i} entry={entry} onOpenFile={handleOpenFile} />;
@@ -108,9 +112,6 @@ export const ExploringBlock: React.FC<Props> = ({ block, isActivePrompt = false 
     </div>
   );
 
-  const entries = block.entries;
-  const isSingleNonThinking = entries.length === 1 && entries[0].kind !== 'thinking';
-
   if (isSingleNonThinking) {
     return (
       <div className="w-full min-w-0 max-w-full">
@@ -118,9 +119,6 @@ export const ExploringBlock: React.FC<Props> = ({ block, isActivePrompt = false 
       </div>
     );
   }
-
-  const label = buildLabel(entries, block.isStreaming);
-
   return (
     <div className="w-full min-w-0 max-w-full text-foreground-secondary">
       <button onClick={() => setIsExpanded(v => !v)}

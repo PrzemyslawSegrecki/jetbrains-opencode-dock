@@ -21,7 +21,8 @@ const IMPACTFUL_KEYWORDS = [
   'del', 'erase', 'rd', 'rmdir', 'move', 'copy', 'ren', 'rename',
   'new-item', 'remove-item', 'move-item', 'copy-item', 'update',
   'curl', 'wget', 'scp', 'rsync', 'ssh', 'ftp', 'uninstall', 'publish',
-  'add', 'commit', 'push', 'revert', 'restore', 'build', 'install'
+  'add', 'commit', 'push', 'revert', 'restore', 'build', 'install',
+  'insert', 'mysql', 'pgsql', 'postgres', 'delete', 'drush'
 ];
 
 const REPLAY_IGNORED_USER_COMMAND_TAGS = [

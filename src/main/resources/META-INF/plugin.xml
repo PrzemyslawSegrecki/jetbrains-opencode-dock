@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>agentdock</id>
     <name>Agent Dock</name>
-    <version>1.2.5</version>
+    <version>1.2.6</version>
     <vendor url="https://github.com/edgarsr/agentdock">EdgarsR</vendor>
 
     <description><![CDATA[
@@ -48,8 +48,8 @@
 
     <change-notes><![CDATA[
         <ul>
-            <li>Added the status bar quota widget.</li>
-            <li>Fixed chat forking from any point.</li>
+            <li>Improved adapter startup timeout handling and Gemini usage patching.</li>
+            <li>Fixed task/todo rendering and several chat UI scrolling and activity display issues.</li>
         </ul>
     ]]></change-notes>
 

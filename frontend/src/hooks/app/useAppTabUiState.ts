@@ -68,16 +68,23 @@ export function useAppTabUiState(activeTabId: string, activeTabIdRef: MutableRef
   }, []);
 
   const handleAssistantActivity = useCallback((tabId: string) => {
-    if (pendingPermissionRef.current[tabId] || tabUiRef.current[tabId]?.warning) {
-      setTabUi(prev => prev[tabId]?.unread ? { ...prev, [tabId]: { ...prev[tabId], unread: false } } : prev);
-      return;
-    }
-    if (canUserSeeResponse(tabId)) {
-      setTabUi(prev => prev[tabId]?.unread ? { ...prev, [tabId]: { ...prev[tabId], unread: false } } : prev);
-      return;
-    }
-    setTabUi(prev => ({ ...prev, [tabId]: { ...prev[tabId], unread: true } }));
-  }, [canUserSeeResponse]);
+    setTabUi(prev => {
+      const current = prev[tabId] ?? DEFAULT_TAB_UI;
+      if (pendingPermissionRef.current[tabId] || current.warning) {
+        return current.unread ? { ...prev, [tabId]: { ...current, unread: false } } : prev;
+      }
+
+      const isActive = tabId === activeTabIdRef.current;
+      const canMarkRead = current.canMarkRead;
+      const canSeeResponse = isActive && canMarkRead;
+
+      if (canSeeResponse) {
+        return current.unread ? { ...prev, [tabId]: { ...current, unread: false } } : prev;
+      }
+
+      return current.unread ? prev : { ...prev, [tabId]: { ...current, unread: true } };
+    });
+  }, [activeTabIdRef]);
 
   const handleAtBottomChange = useCallback((tabId: string, isAtBottom: boolean) => {
     setTabUi(prev => {

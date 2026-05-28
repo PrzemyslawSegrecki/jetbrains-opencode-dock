@@ -1,6 +1,6 @@
 package agentdock.acp
 
-import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
@@ -163,7 +163,7 @@ internal class AcpBridgeCli(
 
     private fun terminalClassLoaders(): List<ClassLoader> {
         val terminalPluginId = PluginId.getId("org.jetbrains.plugins.terminal")
-        val pluginDescriptor = PluginManagerCore.getPlugin(terminalPluginId)
+        val pluginDescriptor = PluginManager.getPlugin(terminalPluginId)
         val pluginClassLoader = runCatching {
             pluginDescriptor
                 ?.javaClass

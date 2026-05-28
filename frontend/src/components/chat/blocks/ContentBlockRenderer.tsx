@@ -24,7 +24,7 @@ export const ContentBlockRenderer: React.FC<Props> = ({ block, isActivePrompt = 
       if (block.entry.kind === 'execute') {
         return <ExecuteBlock block={block} isActivePrompt={isActivePrompt} />;
       }
-      if (block.entry.kind === 'think') {
+      if (block.entry.kind === 'think' || block.entry.kind === 'task') {
         return <SubAgentBlock block={block} />;
       }
       if (block.entry.kind === 'delete' || block.entry.kind === 'move') {

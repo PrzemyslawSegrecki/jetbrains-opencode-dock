@@ -17,11 +17,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
@@ -39,7 +37,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.util.Collections
-import java.util.concurrent.Executors
 import agentdock.BuildConfig
 import agentdock.history.AgentDockHistoryService
 
@@ -338,6 +335,13 @@ internal suspend fun AcpClientService.initializeSharedProcessAtStartup(
         var lastInitializeError: Exception? = null
 
         while (!initialized && attempts < maxAttempts) {
+            if (!proc.isAlive) {
+                val exitValue = runCatching { proc.exitValue() }.getOrNull()
+                throw normalizeAdapterStartupException(
+                    lastInitializeError ?: IllegalStateException("Agent process exited immediately with code $exitValue"),
+                    startupOutput
+                )
+            }
             try {
                 attempts++
                 updateAdapterInitializationState(
@@ -345,12 +349,15 @@ internal suspend fun AcpClientService.initializeSharedProcessAtStartup(
                     AcpClientService.AdapterInitializationStatus.Initializing,
                     detail = "Waiting for ACP initialize... (attempt $attempts)"
                 )
-                withTimeout(10_000L) {
+                val initResult = kotlinx.coroutines.withTimeoutOrNull(10_000L) {
                     c.initialize(ClientInfo(LATEST_PROTOCOL_VERSION, ClientCapabilities()))
+                }
+                if (initResult == null) {
+                    throw java.util.concurrent.TimeoutException("Timed out waiting for 10000 ms")
                 }
                 initialized = true
             } catch (e: Exception) {
-                if (e is CancellationException && e !is TimeoutCancellationException) throw e
+                if (e is CancellationException) throw e
                 val normalized = normalizeAdapterStartupException(e, startupOutput)
                 if (normalized !== e) throw normalized
                 lastInitializeError = e
@@ -493,6 +500,7 @@ internal fun AcpClientService.resolveAdapterProcessWorkingDirectory(adapterRoot:
     return projectBase ?: adapterRoot
 }
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 internal fun AcpClientService.ensureAsyncSessionUpdates(sharedProc: AcpClientService.SharedProcess) {
     synchronized(sharedProc) {
         if (sharedProc.sessionUpdateWrapped) return
@@ -508,12 +516,7 @@ internal fun AcpClientService.ensureAsyncSessionUpdates(sharedProc: AcpClientSer
             val handlers = field.get(protocol) as AtomicRef<PersistentMap<MethodName, suspend (JsonRpcNotification) -> Unit>>
             val methodName = AcpMethod.ClientMethods.SessionUpdate.methodName
             val original = handlers.value[methodName] ?: return
-            val updateDispatcher = Executors.newSingleThreadExecutor { runnable ->
-                Thread(runnable, "agentdock-session-update-${sharedProc.adapterName}").apply {
-                    isDaemon = true
-                }
-            }.asCoroutineDispatcher()
-            val updateScope = CoroutineScope(SupervisorJob() + updateDispatcher)
+            val updateScope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
             sharedProc.sessionUpdateScope = updateScope
             val queue = Channel<QueuedSessionUpdate>(Channel.UNLIMITED)
             sharedProc.sessionUpdateQueue = queue
@@ -549,7 +552,6 @@ internal fun AcpClientService.ensureAsyncSessionUpdates(sharedProc: AcpClientSer
             sharedProc.sessionUpdateQueue = null
             sharedProc.sessionUpdateWorker?.cancel()
             sharedProc.sessionUpdateWorker = null
-            (sharedProc.sessionUpdateScope?.coroutineContext?.get(kotlin.coroutines.ContinuationInterceptor) as? ExecutorCoroutineDispatcher)?.close()
             sharedProc.sessionUpdateScope?.coroutineContext?.cancel()
             sharedProc.sessionUpdateScope = null
             sharedProc.sessionUpdateWrapped = false
