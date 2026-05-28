@@ -14,10 +14,33 @@ data class AcpAgentPreference(
 )
 
 @Serializable
+data class AcpCachedModel(
+    val modelId: String = "",
+    val name: String = "",
+    val description: String = ""
+)
+
+@Serializable
+data class AcpCachedMode(
+    val id: String = "",
+    val name: String = "",
+    val description: String = ""
+)
+
+@Serializable
+data class AcpAdapterMetadataCache(
+    val currentModelId: String = "",
+    val availableModels: List<AcpCachedModel> = emptyList(),
+    val currentModeId: String = "",
+    val availableModes: List<AcpCachedMode> = emptyList()
+)
+
+@Serializable
 data class AcpAgentPreferencesState(
     val lastAgentId: String = "",
     val agents: Map<String, AcpAgentPreference> = emptyMap(),
-    val enabledSystemAdapters: Set<String> = emptySet()
+    val enabledSystemAdapters: Set<String> = emptySet(),
+    val metadataCache: Map<String, AcpAdapterMetadataCache> = emptyMap()
 )
 
 object AcpAgentPreferencesStore {
@@ -128,6 +151,22 @@ object AcpAgentPreferencesStore {
         }
     }
 
+    fun metadataCacheFor(adapterId: String): AcpAdapterMetadataCache? {
+        val trimmedAdapterId = adapterId.trim()
+        if (trimmedAdapterId.isEmpty()) return null
+        return load().metadataCache[trimmedAdapterId]
+    }
+
+    fun allMetadataCache(): Map<String, AcpAdapterMetadataCache> = load().metadataCache
+
+    fun rememberMetadataCache(adapterId: String, cache: AcpAdapterMetadataCache) {
+        val trimmedAdapterId = adapterId.trim()
+        if (trimmedAdapterId.isEmpty()) return
+        updateState { current ->
+            current.copy(metadataCache = current.metadataCache + (trimmedAdapterId to cache))
+        }
+    }
+
     private fun updateState(transform: (AcpAgentPreferencesState) -> AcpAgentPreferencesState): AcpAgentPreferencesState =
         synchronized(lock) {
             val file = stateFile()
@@ -169,10 +208,34 @@ object AcpAgentPreferencesStore {
         val normalizedEnabledSystemAdapters = state.enabledSystemAdapters
             .mapNotNull { it.trim().takeIf { adapterId -> adapterId.isNotEmpty() } }
             .toSet()
+        val normalizedMetadataCache = state.metadataCache.entries.mapNotNull { (adapterId, cache) ->
+            val trimmedAdapterId = adapterId.trim()
+            if (trimmedAdapterId.isEmpty()) return@mapNotNull null
+            val normalizedModels = cache.availableModels
+                .mapNotNull { model ->
+                    val id = model.modelId.trim()
+                    if (id.isEmpty()) null
+                    else AcpCachedModel(modelId = id, name = model.name.trim(), description = model.description.trim())
+                }
+            val normalizedModes = cache.availableModes
+                .mapNotNull { mode ->
+                    val id = mode.id.trim()
+                    if (id.isEmpty()) null
+                    else AcpCachedMode(id = id, name = mode.name.trim(), description = mode.description.trim())
+                }
+            if (normalizedModels.isEmpty() && normalizedModes.isEmpty()) return@mapNotNull null
+            trimmedAdapterId to AcpAdapterMetadataCache(
+                currentModelId = cache.currentModelId.trim(),
+                availableModels = normalizedModels,
+                currentModeId = cache.currentModeId.trim(),
+                availableModes = normalizedModes
+            )
+        }.toMap()
         return AcpAgentPreferencesState(
             lastAgentId = normalizedLastAgentId,
             agents = normalizedAgents,
-            enabledSystemAdapters = normalizedEnabledSystemAdapters
+            enabledSystemAdapters = normalizedEnabledSystemAdapters,
+            metadataCache = normalizedMetadataCache
         )
     }
 }

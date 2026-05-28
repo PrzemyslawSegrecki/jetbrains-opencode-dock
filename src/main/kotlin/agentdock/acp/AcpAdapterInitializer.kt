@@ -50,6 +50,47 @@ internal data class AdapterRuntimeMetadataFetchResult(
     val sessionId: String
 )
 
+internal fun AcpClientService.hydrateAdapterRuntimeMetadataFromCache() {
+    val cached = runCatching { AcpAgentPreferencesStore.allMetadataCache() }.getOrNull().orEmpty()
+    if (cached.isEmpty()) return
+    cached.forEach { (adapterId, cache) ->
+        if (adapterId.isBlank()) return@forEach
+        if (adapterRuntimeMetadataMap.containsKey(adapterId)) return@forEach
+        val models = cache.availableModels.map {
+            AcpAdapterConfig.ModelInfo(modelId = it.modelId, name = it.name, description = it.description.ifBlank { null })
+        }
+        val modes = cache.availableModes.map {
+            AcpAdapterConfig.ModeInfo(id = it.id, name = it.name, description = it.description.ifBlank { null })
+        }
+        if (models.isEmpty() && modes.isEmpty()) return@forEach
+        adapterRuntimeMetadataMap[adapterId] = AcpClientService.AdapterRuntimeMetadata(
+            currentModelId = cache.currentModelId.takeIf { it.isNotBlank() },
+            availableModels = models,
+            currentModeId = cache.currentModeId.takeIf { it.isNotBlank() },
+            availableModes = modes
+        )
+    }
+}
+
+internal fun AcpClientService.persistAdapterRuntimeMetadataCache(
+    adapterName: String,
+    metadata: AcpClientService.AdapterRuntimeMetadata
+) {
+    runCatching {
+        val cache = AcpAdapterMetadataCache(
+            currentModelId = metadata.currentModelId.orEmpty(),
+            availableModels = metadata.availableModels.map {
+                AcpCachedModel(modelId = it.modelId, name = it.name, description = it.description.orEmpty())
+            },
+            currentModeId = metadata.currentModeId.orEmpty(),
+            availableModes = metadata.availableModes.map {
+                AcpCachedMode(id = it.id, name = it.name, description = it.description.orEmpty())
+            }
+        )
+        AcpAgentPreferencesStore.rememberMetadataCache(adapterName, cache)
+    }
+}
+
 internal fun AcpClientService.initializeDownloadedAdaptersInBackground() {
     if (!startupInitializationStarted.compareAndSet(false, true)) return
 
@@ -57,7 +98,11 @@ internal fun AcpClientService.initializeDownloadedAdaptersInBackground() {
         val downloaded = runCatching { AcpAdapterPaths.isDownloaded(adapterInfo.id) }.getOrDefault(false)
         if (!downloaded) return@forEach
         val runtimeSource = runCatching { AcpAdapterPaths.runtimeSource(adapterInfo.id) }.getOrNull()
-        if (runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) return@forEach
+        if (runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM &&
+            !AcpAgentPreferencesStore.isSystemAdapterEnabled(adapterInfo.id)
+        ) {
+            return@forEach
+        }
         initializeAdapterInBackground(adapterInfo.id)
     }
 }
@@ -381,6 +426,7 @@ internal suspend fun AcpClientService.initializeSharedProcessAtStartup(
             )
             val metadataResult = fetchAdapterRuntimeMetadata(c, adapterInfo)
             adapterRuntimeMetadataMap[requestedAdapterName] = metadataResult.metadata
+            persistAdapterRuntimeMetadataCache(requestedAdapterName, metadataResult.metadata)
             AgentDockHistoryService.registerEphemeralSession(project.basePath, requestedAdapterName, metadataResult.sessionId)
         } catch (_: kotlinx.serialization.SerializationException) {
             // Protocol version mismatch between adapter binary and ACP SDK -

@@ -451,6 +451,12 @@ internal fun AcpBridge.installAdapterQueries() {
             val enabled = obj?.get("enabled")?.jsonPrimitive?.booleanOrNull ?: false
             if (adapterId.isNotBlank()) {
                 AcpAgentPreferencesStore.setSystemAdapterEnabled(adapterId, enabled)
+                if (enabled) {
+                    val runtimeSource = runCatching { AcpAdapterPaths.runtimeSource(adapterId) }.getOrNull()
+                    if (runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) {
+                        service.initializeAdapterInBackground(adapterId)
+                    }
+                }
                 scope.launch(Dispatchers.IO) { pushAdapters() }
             }
             JBCefJSQuery.Response("ok")

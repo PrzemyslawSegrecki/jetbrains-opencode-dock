@@ -58,6 +58,7 @@ class AcpClientService private constructor(val project: Project) {
                 })
                 created
             }
+            service.hydrateAdapterRuntimeMetadataFromCache()
             service.initializeDownloadedAdaptersInBackground()
             return service
         }
