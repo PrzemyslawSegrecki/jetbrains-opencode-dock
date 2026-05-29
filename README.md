@@ -1,26 +1,18 @@
 # OpenCode Dock
 
-OpenCode Dock is a JetBrains plugin that brings OpenCode into a dedicated IDE tool window while keeping runtime data isolated from the original Agent Dock plugin.
+JetBrains plugin that brings OpenCode into a dedicated IDE tool window, following the active IDE theme.
 
 ## Highlights
 
-- OpenCode-only runtime management inside the IDE.
+- OpenCode runtime installation, update, and authentication inside the plugin.
 - ACP-based communication with the OpenCode runtime.
-- Structured chat output for tool calls, plans, commands, diffs, and file edits.
-- Inline file references, code references, slash commands, and image paste support.
-- Chat history with rename, delete, bulk delete, and fork flows.
+- Structured chat output for tool calls, thinking blocks, plans, commands, diffs, and file edits.
+- File change review with accept/revert from the IDE.
+- Inline file references, code references, slash commands, @mentions, and image paste.
+- Chat history with rename, delete, bulk delete, fork, and resume flows.
 - Model selection with provider-based grouping derived from OpenCode model IDs.
-- MCP configuration, prompt library, system instructions, and commit message generation.
-- Optional status bar quota widget and Windows voice input support.
-
-## Isolation
-
-OpenCode Dock is intended to coexist with Agent Dock without conflicts.
-
-- Plugin ID: `opencodedock`
-- Tool window ID: `OpenCode Dock`
-- Runtime storage: `~/.opencode-dock`
-- Frontend local storage keys: `opencode-dock.*`
+- MCP server configuration, prompt library, system instructions, and commit message generation.
+- Status bar quota widget and Windows voice input.
 
 ## Requirements
 
@@ -36,4 +28,4 @@ OpenCode Dock is intended to coexist with Agent Dock without conflicts.
 
 ## Screenshot
 
-![OpenCode Dock chat interface](docs/images/agent-dock-chat.png)
+![OpenCode Dock chat interface](docs/images/opencode-dock-chat.png)
