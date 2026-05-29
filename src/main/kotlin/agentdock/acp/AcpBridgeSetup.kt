@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.SessionUpdate
 import com.intellij.ui.jcef.JBCefJSQuery
@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import agentdock.history.AgentDockHistoryService
+import opencodedock.history.OpenCodeDockHistoryService
 import java.io.File
 internal fun AcpBridge.installServiceCallbacks() {
     service.setOnLogEntry { pushLogEntry(it) }
@@ -560,13 +560,7 @@ internal fun AcpBridge.installAdapterQueries() {
         addHandler { payload ->
             val adapterId = parseIdOnlyPayload(payload) ?: payload?.trim() ?: ""
             scope.launch(Dispatchers.IO) {
-                val result = when (adapterId) {
-                    "claude-code" -> AcpUsageDataFetcher.fetchClaudeUsageData()
-                    "codex" -> AcpUsageDataFetcher.fetchCodexUsageData()
-                    "gemini-cli" -> AcpUsageDataFetcher.fetchGeminiUsageData(adapterId)
-                    "github-copilot-cli" -> AcpUsageDataFetcher.fetchCopilotUsageData(adapterId)
-                    else -> ""
-                }
+                val result = ""
                 if (result.isNotBlank()) {
                     AcpQuotaService.getInstance().updateQuotaForAdapter(adapterId, result)
                 }

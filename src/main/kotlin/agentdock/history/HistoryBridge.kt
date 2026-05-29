@@ -1,4 +1,4 @@
-package agentdock.history
+package opencodedock.history
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -12,7 +12,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.cef.browser.CefBrowser
-import agentdock.utils.escapeForJsString
+import opencodedock.utils.escapeForJsString
 
 private val permissiveJson = Json {
     ignoreUnknownKeys = true
@@ -57,7 +57,7 @@ class HistoryBridge(
                 val projectPath = payload?.trim()?.takeUnless { it.isEmpty() || it == "undefined" } ?: defaultProjectPath
                 scope.launch(Dispatchers.Default) {
                     try {
-                        val history = AgentDockHistoryService.getHistoryList(projectPath)
+                        val history = OpenCodeDockHistoryService.getHistoryList(projectPath)
                         pushHistoryList(permissiveJson.encodeToString(history))
                     } catch (e: Exception) {
                         sendJsError("Failed to list history: ${e.message}")
@@ -72,7 +72,7 @@ class HistoryBridge(
                 val projectPath = payload?.trim()?.takeUnless { it.isEmpty() || it == "undefined" } ?: defaultProjectPath
                 scope.launch(Dispatchers.Default) {
                     try {
-                        val history = AgentDockHistoryService.syncAndGetHistoryList(projectPath)
+                        val history = OpenCodeDockHistoryService.syncAndGetHistoryList(projectPath)
                         pushHistoryList(permissiveJson.encodeToString(history))
                     } catch (e: Exception) {
                         sendJsError("Failed to sync history: ${e.message}")
@@ -89,8 +89,8 @@ class HistoryBridge(
                 scope.launch(Dispatchers.Default) {
                     try {
                         val request = permissiveJson.decodeFromString<DeleteHistoryPayload>(payload)
-                        val result = AgentDockHistoryService.deleteConversations(request.projectPath, request.conversationIds)
-                        val history = AgentDockHistoryService.getHistoryList(request.projectPath)
+                        val result = OpenCodeDockHistoryService.deleteConversations(request.projectPath, request.conversationIds)
+                        val history = OpenCodeDockHistoryService.getHistoryList(request.projectPath)
                         pushHistoryList(permissiveJson.encodeToString(history))
                         pushDeleteResult(
                             DeleteHistoryResultPayload(
@@ -129,9 +129,9 @@ class HistoryBridge(
                 scope.launch(Dispatchers.Default) {
                     try {
                         val request = permissiveJson.decodeFromString<RenameHistoryPayload>(payload)
-                        val success = AgentDockHistoryService.renameConversation(request.projectPath, request.conversationId, request.newTitle)
+                        val success = OpenCodeDockHistoryService.renameConversation(request.projectPath, request.conversationId, request.newTitle)
                         if (success) {
-                            val history = AgentDockHistoryService.getHistoryList(request.projectPath)
+                            val history = OpenCodeDockHistoryService.getHistoryList(request.projectPath)
                             pushHistoryList(permissiveJson.encodeToString(history))
                         } else {
                             sendJsError("Failed to rename conversation")

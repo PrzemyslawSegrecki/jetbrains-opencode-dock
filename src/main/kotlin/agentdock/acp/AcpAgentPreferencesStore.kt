@@ -1,9 +1,9 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import agentdock.utils.atomicWriteText
+import opencodedock.utils.atomicWriteText
 import java.io.File
 
 @Serializable

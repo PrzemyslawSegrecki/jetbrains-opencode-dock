@@ -1,4 +1,4 @@
-package agentdock
+package opencodedock
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
@@ -8,7 +8,7 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.Serializable
-import agentdock.utils.escapeForJsString
+import opencodedock.utils.escapeForJsString
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 

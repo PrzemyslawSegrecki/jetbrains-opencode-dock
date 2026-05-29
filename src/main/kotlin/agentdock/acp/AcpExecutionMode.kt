@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -17,7 +17,7 @@ internal data class CommandResult(
 )
 
 internal object AcpExecutionMode {
-    private const val RUNTIME_DIR_NAME = ".agent-dock"
+    private const val RUNTIME_DIR_NAME = ".opencode-dock"
 
     fun isWindowsHost(): Boolean = System.getProperty("os.name").lowercase().contains("win")
 

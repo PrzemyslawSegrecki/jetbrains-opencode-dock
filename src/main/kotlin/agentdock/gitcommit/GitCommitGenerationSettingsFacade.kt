@@ -1,8 +1,8 @@
-package agentdock.gitcommit
+package opencodedock.gitcommit
 
 import com.intellij.openapi.project.Project
-import agentdock.acp.AcpAdapterConfig
-import agentdock.settings.GlobalSettingsStore
+import opencodedock.acp.AcpAdapterConfig
+import opencodedock.settings.GlobalSettingsStore
 
 data class GitCommitGenerationConfig(
     val adapterId: String,

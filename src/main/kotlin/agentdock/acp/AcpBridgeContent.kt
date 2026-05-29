@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.ContentBlock
 import com.agentclientprotocol.model.SessionUpdate
@@ -6,11 +6,11 @@ import com.agentclientprotocol.model.ToolCallContent
 import com.intellij.openapi.diagnostic.logger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import agentdock.changes.ChangesState
-import agentdock.changes.ChangesStateService
-import agentdock.history.ConversationAssistantMetadata
-import agentdock.history.ConversationReplayData
-import agentdock.utils.escapeForJsString
+import opencodedock.changes.ChangesState
+import opencodedock.changes.ChangesStateService
+import opencodedock.history.ConversationAssistantMetadata
+import opencodedock.history.ConversationReplayData
+import opencodedock.utils.escapeForJsString
 
 private val LOG = logger<AcpBridge>()
 
@@ -301,7 +301,7 @@ internal fun AcpBridge.pushPermissionRequest(request: PermissionRequest) {
     audio.playPermissionRequestSound()
 }
 
-internal fun AcpBridge.pushUndoResult(chatId: String, result: agentdock.changes.UndoResult) {
+internal fun AcpBridge.pushUndoResult(chatId: String, result: opencodedock.changes.UndoResult) {
     val payloadJson = buildJsonObject {
         put("success", result.success)
         put("message", result.message)

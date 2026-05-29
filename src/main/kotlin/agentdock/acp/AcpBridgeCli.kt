@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.application.ApplicationManager
@@ -6,7 +6,7 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import agentdock.history.AgentDockHistoryService
+import opencodedock.history.OpenCodeDockHistoryService
 import java.io.File
 
 /**
@@ -44,7 +44,7 @@ internal class AcpBridgeCli(
 
     fun openHistoryConversationCliInTerminal(projectPath: String, conversationId: String) {
         val latestSession = runBlocking {
-            AgentDockHistoryService.getConversationSessions(projectPath, conversationId)
+            OpenCodeDockHistoryService.getConversationSessions(projectPath, conversationId)
                 .maxByOrNull { it.updatedAt }
         } ?: return
 

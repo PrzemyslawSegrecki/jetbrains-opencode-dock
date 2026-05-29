@@ -1,9 +1,9 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.serialization.json.JsonObject
-import agentdock.history.ConversationAssistantMetadata
-import agentdock.history.AgentDockHistoryService
-import agentdock.history.ForkConversationBase
+import opencodedock.history.ConversationAssistantMetadata
+import opencodedock.history.OpenCodeDockHistoryService
+import opencodedock.history.ForkConversationBase
 
 internal fun AcpBridge.beginLivePromptCapture(
     chatId: String,
@@ -113,7 +113,7 @@ internal fun AcpBridge.flushLivePromptCapture(
         contextWindowSize = snapshot.contextWindowSize
     )
 
-    AgentDockHistoryService.appendConversationPrompt(
+    OpenCodeDockHistoryService.appendConversationPrompt(
         projectPath = snapshot.projectPath,
         conversationId = snapshot.conversationId,
         sessionId = snapshot.sessionId,

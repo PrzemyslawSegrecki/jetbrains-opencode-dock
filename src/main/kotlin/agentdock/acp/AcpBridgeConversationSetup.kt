@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.Dispatchers
@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.*
-import agentdock.history.AgentDockHistoryService
+import opencodedock.history.OpenCodeDockHistoryService
 
 private data class PermissionDecisionPayload(
     val requestId: String,
@@ -321,7 +321,7 @@ internal fun AcpBridge.installConversationQueries() {
                         promptJobs[chatId]?.cancel()
                         promptJobs.remove(chatId)
                         val projectPath = service.project.basePath
-                        AgentDockHistoryService.truncateConversationReplay(
+                        OpenCodeDockHistoryService.truncateConversationReplay(
                             projectPath,
                             chatId,
                             parsed.promptCount

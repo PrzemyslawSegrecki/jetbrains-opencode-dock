@@ -1,11 +1,11 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.annotations.UnstableApi
 import kotlinx.coroutines.flow.toList
-import agentdock.history.SessionMeta
-import agentdock.history.fallbackHistoryTitle
-import agentdock.history.historyComparablePath
-import agentdock.history.parseHistoryTimestamp
+import opencodedock.history.SessionMeta
+import opencodedock.history.fallbackHistoryTitle
+import opencodedock.history.historyComparablePath
+import opencodedock.history.parseHistoryTimestamp
 
 @OptIn(UnstableApi::class)
 internal suspend fun AcpClientService.listHistorySessions(
@@ -18,7 +18,7 @@ internal suspend fun AcpClientService.listHistorySessions(
     val sharedProc = activeProcesses[processKey(adapterInfo.id)]?.takeIf { it.isHealthy() } ?: return emptyList()
     val client = sharedProc.client ?: return emptyList()
     val expectedProjectPath = historyComparablePath(projectPath)
-    val requestedCwd = if (adapterInfo.id == "codex" || adapterInfo.id == "github-copilot-cli") null else resolveSessionCwd(projectPath)
+    val requestedCwd = resolveSessionCwd(projectPath)
 
     return client.listSessions(cwd = requestedCwd).toList().mapNotNull { session ->
         val sessionProjectPath = historyComparablePath(session.cwd)

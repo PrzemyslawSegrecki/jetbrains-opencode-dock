@@ -1,15 +1,15 @@
-package agentdock.acp
+package opencodedock.acp
 
 import java.io.File
 
 /**
- * Adapter runtimes are downloaded at runtime to ~/.agent-dock/dependencies/<adapter-name>/.
+ * Adapter runtimes are downloaded at runtime to ~/.opencode-dock/dependencies/<adapter-name>/.
  * Supported distribution types:
  * - archive: download and extract a platform archive into the adapter directory
  * - npm: install package into the adapter directory and run its launch path
  */
 object AcpAdapterPaths {
-    private const val ADAPTER_NAME_OVERRIDE_PROPERTY = "agentdock.acp.adapter.name"
+    private const val ADAPTER_NAME_OVERRIDE_PROPERTY = "opencodedock.acp.adapter.name"
 
     fun getAdapterInfo(adapterName: String? = null): AcpAdapterConfig.AdapterInfo {
         val resolvedName = resolveAdapterName(adapterName)

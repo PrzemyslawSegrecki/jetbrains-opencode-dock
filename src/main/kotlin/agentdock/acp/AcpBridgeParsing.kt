@@ -1,7 +1,7 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.*
-import agentdock.history.ForkConversationBase
+import opencodedock.history.ForkConversationBase
 import kotlinx.serialization.json.*
 
 internal data class ParsedStartPayload(

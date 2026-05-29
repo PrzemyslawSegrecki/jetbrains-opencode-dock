@@ -8,6 +8,7 @@ import { SettingsSelectCard } from './settings/SettingsSelectCard';
 import { SettingsToggleCard } from './settings/SettingsToggleCard';
 import { Button } from './ui/Button';
 import { DropdownOption, DropdownSelect } from './ui/DropdownSelect';
+import { getModelProviderGroupLabel } from '../hooks/chatSession/agentSelection';
 
 const defaultGlobalSettings: GlobalSettingsPayload = {
   settings: {
@@ -133,6 +134,26 @@ function applyHiddenModelsToAgents(agents: AgentOption[], adapterId: string, hid
       ? { ...agent, hiddenModels }
       : agent
   ));
+}
+
+function groupModelsByProvider(agent: AgentOption): Array<{ label: string; modelIds: string[]; models: NonNullable<AgentOption['availableModels']> }> {
+  const groups = new Map<string, NonNullable<AgentOption['availableModels']>>();
+
+  (agent.availableModels ?? []).forEach((model) => {
+    const label = getModelProviderGroupLabel(model.modelId);
+    const existing = groups.get(label);
+    if (existing) {
+      existing.push(model);
+      return;
+    }
+    groups.set(label, [model]);
+  });
+
+  return Array.from(groups.entries()).map(([label, models]) => ({
+    label,
+    modelIds: models.map((model) => model.modelId),
+    models,
+  }));
 }
 
 export function SettingsView() {
@@ -371,14 +392,15 @@ export function SettingsView() {
 
           <SettingsCardShell
             title="Visible Models"
-            description="Choose which models should appear in the chat model picker for each provider"
+            description="Choose which providers and models appear in the OpenCode model picker. Toggle a provider checkbox to hide or show its whole group."
           >
             <div className="flex flex-col gap-3">
               {agentsWithModels.length === 0 ? (
-                <div className="text-foreground-secondary">No installed providers with model lists available yet.</div>
+                <div className="text-foreground-secondary">OpenCode model lists are not available yet.</div>
               ) : agentsWithModels.map((agent) => {
                 const hiddenModels = new Set(agent.hiddenModels ?? []);
                 const visibleCount = (agent.availableModels ?? []).filter((model) => !hiddenModels.has(model.modelId)).length;
+                const providerGroups = groupModelsByProvider(agent);
 
                 return (
                   <div key={agent.id} className="rounded-[6px] border border-border px-3 py-3">
@@ -403,25 +425,49 @@ export function SettingsView() {
                         </Button>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      {(agent.availableModels ?? []).map((model) => {
-                        const visible = isModelVisible(agent, model.modelId);
+                    <div className="flex flex-col gap-2">
+                      {providerGroups.map((group) => {
+                        const groupVisibleCount = group.models.filter((model) => !hiddenModels.has(model.modelId)).length;
 
                         return (
-                          <label key={model.modelId} className={`flex items-start gap-2 rounded-[4px] px-2 py-1.5 ${visible ? 'hover:bg-hover' : 'opacity-85 hover:bg-hover'}`}>
-                            <input
-                              type="checkbox"
-                              checked={visible}
-                              onChange={(event) => handleModelVisibilityInputChange(agent, model.modelId, event)}
-                              className="mt-[2px]"
-                            />
-                            <span className="min-w-0">
-                              <span className="block truncate">{model.name}</span>
-                              {model.description ? (
-                                <span className="block text-foreground-secondary text-ide-small">{model.description}</span>
-                              ) : null}
-                            </span>
-                          </label>
+                          <div key={`${agent.id}:${group.label}`} className="rounded-[4px] border border-border/60 px-2 py-2">
+                            <div className="mb-1.5 flex items-center gap-2">
+                              <label className="flex cursor-pointer items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={groupVisibleCount === group.models.length}
+                                  ref={(el) => {
+                                    if (el) el.indeterminate = groupVisibleCount > 0 && groupVisibleCount < group.models.length;
+                                  }}
+                                  onChange={(event) => handleModelVisibilityChange(agent.id, group.modelIds, event.target.checked)}
+                                />
+                                <span className="text-[11px] uppercase tracking-[0.04em] text-foreground-secondary">{group.label}</span>
+                              </label>
+                              <span className="text-foreground-secondary text-ide-small">{groupVisibleCount}/{group.models.length} visible</span>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              {group.models.map((model) => {
+                                const visible = isModelVisible(agent, model.modelId);
+
+                                return (
+                                  <label key={model.modelId} className={`flex items-start gap-2 rounded-[4px] px-2 py-1.5 ${visible ? 'hover:bg-hover' : 'opacity-85 hover:bg-hover'}`}>
+                                    <input
+                                      type="checkbox"
+                                      checked={visible}
+                                      onChange={(event) => handleModelVisibilityInputChange(agent, model.modelId, event)}
+                                      className="mt-[2px]"
+                                    />
+                                    <span className="min-w-0">
+                                      <span className="block truncate">{model.name}</span>
+                                      {model.description ? (
+                                        <span className="block text-foreground-secondary text-ide-small">{model.description}</span>
+                                      ) : null}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>

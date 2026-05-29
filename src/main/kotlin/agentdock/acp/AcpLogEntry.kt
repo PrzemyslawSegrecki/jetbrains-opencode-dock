@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 /**
  * A single raw JSON-RPC message captured for the debug log.

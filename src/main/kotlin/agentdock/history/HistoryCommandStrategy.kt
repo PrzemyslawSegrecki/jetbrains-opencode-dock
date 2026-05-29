@@ -1,8 +1,8 @@
-package agentdock.history
+package opencodedock.history
 
-import agentdock.acp.AcpExecutionTarget
-import agentdock.acp.buildAdapterCliCommandParts
-import agentdock.acp.isWindowsLocalTarget
+import opencodedock.acp.AcpExecutionTarget
+import opencodedock.acp.buildAdapterCliCommandParts
+import opencodedock.acp.isWindowsLocalTarget
 import java.io.File
 
 internal fun runAgentHistoryCliCommand(

@@ -1,8 +1,8 @@
-package agentdock.ui
+package opencodedock.ui
 
-import agentdock.acp.AcpQuotaService
-import agentdock.acp.QuotaDetail
-import agentdock.settings.GlobalSettingsStore
+import opencodedock.acp.AcpQuotaService
+import opencodedock.acp.QuotaDetail
+import opencodedock.settings.GlobalSettingsStore
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.IconLoader
 import com.intellij.util.IconUtil
@@ -26,18 +26,18 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
 
-class AgentDockQuotaWidgetFactory : StatusBarWidgetFactory {
-    override fun getId(): String = "AgentDockQuotaWidget"
-    override fun getDisplayName(): String = "AgentDock Quota"
+class OpenCodeDockQuotaWidgetFactory : StatusBarWidgetFactory {
+    override fun getId(): String = "OpenCodeDockQuotaWidget"
+    override fun getDisplayName(): String = "OpenCode Dock Quota"
     override fun isAvailable(project: Project): Boolean = GlobalSettingsStore.load().quotaWidgetEnabled
-    override fun createWidget(project: Project): StatusBarWidget = AgentDockQuotaWidget(project)
+    override fun createWidget(project: Project): StatusBarWidget = OpenCodeDockQuotaWidget(project)
     override fun disposeWidget(widget: StatusBarWidget) {
         widget.dispose()
     }
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
 }
 
-class AgentDockQuotaWidget(project: Project) : CustomStatusBarWidget {
+class OpenCodeDockQuotaWidget(project: Project) : CustomStatusBarWidget {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var statusBar: StatusBar? = null
     private var isHovered = false
@@ -85,7 +85,7 @@ class AgentDockQuotaWidget(project: Project) : CustomStatusBarWidget {
         isOpaque = true
         cursor = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR)
         border = JBUI.Borders.empty(0, 4)
-        toolTipText = "Agent Quotas"
+        toolTipText = "OpenCode Quotas"
         add(noQuotaLabel)
         quotaSlots.forEach { add(it) }
         add(overflowLabel)
@@ -136,14 +136,7 @@ class AgentDockQuotaWidget(project: Project) : CustomStatusBarWidget {
     }
 
     private fun loadAdapterIcon(adapterId: String): Icon? {
-        val isDark = !JBColor.isBright()
-        val path = when (adapterId) {
-            "claude-code" -> "/icons/claude.svg"
-            "gemini-cli" -> "/icons/gemini.svg"
-            "codex" -> if (isDark) "/icons/codex-dark.svg" else "/icons/codex-light.svg"
-            "github-copilot-cli" -> if (isDark) "/icons/copilot-dark.svg" else "/icons/copilot-light.svg"
-            else -> "/icons/agent_dock_toolwindow.svg"
-        }
+        val path = "/icons/opencode.svg"
         return try {
             val icon = IconLoader.getIcon(path, javaClass)
             val targetSize = JBUI.scale(14)
@@ -210,7 +203,7 @@ class AgentDockQuotaWidget(project: Project) : CustomStatusBarWidget {
 
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(container, null)
-            .setTitle("Agent Quotas")
+            .setTitle("OpenCode Quotas")
             .setMovable(false)
             .setResizable(false)
             .createPopup()
@@ -221,7 +214,7 @@ class AgentDockQuotaWidget(project: Project) : CustomStatusBarWidget {
         popup.show(RelativePoint(panel, java.awt.Point(0, -totalHeight)))
     }
 
-    override fun ID(): String = "AgentDockQuotaWidget"
+    override fun ID(): String = "OpenCodeDockQuotaWidget"
 
     override fun install(statusBar: StatusBar) {
         this.statusBar = statusBar

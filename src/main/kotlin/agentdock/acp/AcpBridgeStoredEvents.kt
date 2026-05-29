@@ -1,10 +1,10 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.ContentBlock
 import com.agentclientprotocol.model.SessionUpdate
 import kotlinx.serialization.json.*
-import agentdock.history.ConversationAssistantMetadata
-import agentdock.history.HistoryDiffCompactor
+import opencodedock.history.ConversationAssistantMetadata
+import opencodedock.history.HistoryDiffCompactor
 
 private val replayIgnoredUserCommandTags = listOf(
     "command-name",

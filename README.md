@@ -1,54 +1,39 @@
-# Agent Dock
+# OpenCode Dock
 
-Agent Dock brings widely used AI coding agents into a unified GUI that follows the active JetBrains IDE theme.
+OpenCode Dock is a JetBrains plugin that brings OpenCode into a dedicated IDE tool window while keeping runtime data isolated from the original Agent Dock plugin.
 
-The project's goal is to deliver a rich GUI experience for AI agents within JetBrains IDEs, including features absent from other JetBrains AI plugins, such as live token usage updates directly in the chat interface and switching between AI agents within the same chat while preserving session context.
+## Highlights
 
-Currently supported AI agents:
+- OpenCode-only runtime management inside the IDE.
+- ACP-based communication with the OpenCode runtime.
+- Structured chat output for tool calls, plans, commands, diffs, and file edits.
+- Inline file references, code references, slash commands, and image paste support.
+- Chat history with rename, delete, bulk delete, and fork flows.
+- Model selection with provider-based grouping derived from OpenCode model IDs.
+- MCP configuration, prompt library, system instructions, and commit message generation.
+- Optional status bar quota widget and Windows voice input support.
 
-- Claude Code
-- Codex
-- Cursor
-- Gemini CLI
-- GitHub Copilot
-- Kilo
-- OpenCode
-- Qoder
+## Isolation
 
-## Features
+OpenCode Dock is intended to coexist with Agent Dock without conflicts.
 
-- Installation, update, and uninstall flows for supported AI agents inside the plugin.
-- Communication with supported AI agents through ACP (Agent Client Protocol) in a GUI.
-- Structured display of agent output, including tool use, thinking blocks, terminal commands, plans, file edits, and diffs.
-- Review of files changed by an agent, with options to accept selected changes or revert them from the IDE.
-- Audio notifications for important chat and agent events.
-- Slash commands and `@` mentions backed by JetBrains project file search.
-- Code selections and file references can be added to chat from the editor and project view.
-- Images can be pasted into chat and previewed inline.
-- Live token quota and context usage are shown directly in the chat input while prompting, for agents that support it.
-  For Claude Code and Codex, quota data is fetched using the OAuth credentials.
-- Voice input for prompts (Windows only).
-- Chats can be continued in the IDE terminal when CLI mode is a better fit.
-- Chat history supports opening, renaming, deleting, and bulk deletion.
-- Chats can be forked from any point.
-- AI agents can be switched within the same chat while preserving the session context.
-- MCP server configuration for additional agent tools and external resources.
-- Reusable prompts can be saved in the prompt library and inserted into chat when needed.
-- System instructions can be managed and applied to agent sessions.
-- Git commit messages can be generated from the current changes.
+- Plugin ID: `opencodedock`
+- Tool window ID: `OpenCode Dock`
+- Runtime storage: `~/.opencode-dock`
+- Frontend local storage keys: `opencode-dock.*`
 
 ## Requirements
 
 - JetBrains IDE based on IntelliJ Platform 2025.1 or newer.
-- Some agents use JetBrains IDE terminal for authentication.
-- On macOS and Linux, installing some agents requires `curl` and `tar`.
+- OpenCode uses the IDE terminal for some authentication and runtime flows.
+- On macOS and Linux, installing the runtime requires `curl` and `tar`.
 
-## Technology
+## Stack
 
-- **Backend:** Kotlin
-- **Frontend:** React, Tailwind
-- **Agent communication:** ACP (Agent Client Protocol)
+- Backend: Kotlin + Gradle
+- Frontend: React + TypeScript + Tailwind
+- Runtime protocol: ACP (`com.agentclientprotocol:acp`)
 
 ## Screenshot
 
-![Agent Dock chat interface](docs/images/agent-dock-chat.png)
+![OpenCode Dock chat interface](docs/images/agent-dock-chat.png)

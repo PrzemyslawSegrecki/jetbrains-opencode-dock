@@ -1,11 +1,11 @@
-package agentdock.changes
+package opencodedock.changes
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import agentdock.utils.LocalFilePathPolicy
+import opencodedock.utils.LocalFilePathPolicy
 import java.io.File
 import java.nio.charset.StandardCharsets
 

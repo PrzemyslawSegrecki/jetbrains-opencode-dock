@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.ModelId
 import com.agentclientprotocol.model.SessionModeId

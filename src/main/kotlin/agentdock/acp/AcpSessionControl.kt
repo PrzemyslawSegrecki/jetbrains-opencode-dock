@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.common.Event
 import com.agentclientprotocol.model.ContentBlock
@@ -10,7 +10,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.withLock
-import agentdock.systeminstructions.SystemInstructionsStore
+import opencodedock.systeminstructions.SystemInstructionsStore
 
 internal fun AcpClientService.respondToPermissionRequest(requestId: String, decision: String) {
     for (context in sessions.values) {

@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

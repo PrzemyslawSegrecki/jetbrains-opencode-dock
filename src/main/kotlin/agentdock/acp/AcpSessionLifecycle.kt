@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.client.ClientOperationsFactory
 import com.agentclientprotocol.common.ClientSessionOperations
@@ -11,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import agentdock.history.SessionMeta
+import opencodedock.history.SessionMeta
 
 // Max time to wait for the agent process to start and respond to ACP initialize.
 // The retry loop in initializeSharedProcessAtStartup can take up to this long for slow agents (e.g. Gemini).

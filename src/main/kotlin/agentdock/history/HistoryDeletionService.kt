@@ -1,7 +1,7 @@
-package agentdock.history
+package opencodedock.history
 
 import kotlinx.coroutines.delay
-import agentdock.acp.AcpAdapterConfig
+import opencodedock.acp.AcpAdapterConfig
 import java.io.File
 import java.time.Instant
 

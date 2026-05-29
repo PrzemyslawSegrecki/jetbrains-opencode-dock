@@ -1,8 +1,6 @@
 import { RefObject } from 'react';
 import { X } from 'lucide-react';
 import { AgentOption, ChatTab, TabUiFlags } from '../../types/chat';
-import { ACPBridge } from '../../utils/bridge';
-import { Tooltip } from '../chat/shared/Tooltip';
 import { getAgentIcon, getTabIcon } from './TabIcons';
 import { moveMenuFocus } from './menuFocus';
 
@@ -17,7 +15,7 @@ interface TabOverflowMenuProps {
   onSelectTab: (id: string) => void;
   onCloseTab: (id: string) => void;
   onCloseAllTabs: () => void;
-  onNewTabWithAgent: (agentId: string) => void;
+  onNewTab: () => void;
   onCloseMenu: () => void;
 }
 
@@ -32,7 +30,7 @@ export function TabOverflowMenu({
   onSelectTab,
   onCloseTab,
   onCloseAllTabs,
-  onNewTabWithAgent,
+  onNewTab,
   onCloseMenu,
 }: TabOverflowMenuProps) {
   return (
@@ -135,49 +133,23 @@ export function TabOverflowMenu({
           New Chat
         </div>
         {runnableAgents.length > 0 ? (
-          runnableAgents.map((agent) => (
-            <div key={agent.id}
-              className="mb-0.5 mx-2 flex w-[calc(100%-1rem)] items-stretch rounded-[4px] text-foreground
-              transition-colors hover:bg-accent hover:text-accent-foreground
-              focus-within:shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]"
-            >
-              <button
-                onClick={() => {
-                  onNewTabWithAgent(agent.id);
-                  onCloseMenu();
-                }}
-                className="flex flex-1 items-center rounded-l-[4px] px-3 min-h-8 text-left focus:outline-none"
-                role="menuitem"
-              >
-                <span className="mr-2 flex items-center justify-center">
-                  {getAgentIcon(agent.id, agents)}
-                </span>
-                <span className="flex-1 min-w-0 truncate">{agent.name}</span>
-              </button>
-              {agent.cliAvailable ? (
-                <div className="ml-2 flex items-stretch self-stretch">
-                  <Tooltip variant="minimal" content={`Open ${agent.name} in terminal`} className="flex self-stretch">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        ACPBridge.openAgentCli(agent.id);
-                        onCloseMenu();
-                      }}
-                      className="relative flex items-center self-stretch pl-4 pr-2 text-foreground-secondary
-                        hover:text-accent-foreground focus:outline-none focus:text-accent-foreground
-                        before:pointer-events-none before:absolute before:bottom-[28%] before:left-[3px]
-                        before:top-[28%] before:w-px before:bg-[var(--ide-Borders-color)]"
-                      role="menuitem"
-                    >
-                      CLI
-                    </button>
-                  </Tooltip>
-                </div>
-              ) : null}
-            </div>
-          ))
+          <button
+            onClick={() => {
+              onNewTab();
+              onCloseMenu();
+            }}
+            className="mb-0.5 mx-2 flex w-[calc(100%-1rem)] items-center rounded-[4px] px-3 py-1 text-left text-foreground
+              transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none
+              focus-visible:shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]"
+            role="menuitem"
+          >
+            <span className="mr-2 flex items-center justify-center">
+              {getAgentIcon(runnableAgents[0]?.id, agents)}
+            </span>
+            <span className="flex-1 min-w-0 truncate">Start a new OpenCode chat</span>
+          </button>
         ) : (
-          <div className="px-5 min-h-8 text-[var(--ide-Label-disabledForeground)] italic">No available agents</div>
+          <div className="px-5 min-h-8 text-[var(--ide-Label-disabledForeground)] italic">OpenCode is not ready yet</div>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.protocol.Protocol
 import kotlinx.atomicfu.AtomicRef

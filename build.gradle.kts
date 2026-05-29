@@ -63,9 +63,9 @@ val generateBuildConfig by tasks.registering {
     val isDev = devMode
     outputs.dir(outputDir)
     doLast {
-        val file = outputDir.get().asFile.resolve("agentdock/BuildConfig.kt")
+        val file = outputDir.get().asFile.resolve("opencodedock/BuildConfig.kt")
         file.parentFile.mkdirs()
-        file.writeText("package agentdock\n\ninternal object BuildConfig {\n    const val IS_DEV: Boolean = $isDev\n}\n")
+        file.writeText("package opencodedock\n\ninternal object BuildConfig {\n    const val IS_DEV: Boolean = $isDev\n}\n")
     }
 }
 
@@ -83,6 +83,10 @@ tasks {
 
     processResources {
         dependsOn(npmBuild)
+    }
+
+    named<org.gradle.api.tasks.bundling.Zip>("buildPlugin") {
+        archiveBaseName.set("opencode-dock")
     }
 
 }

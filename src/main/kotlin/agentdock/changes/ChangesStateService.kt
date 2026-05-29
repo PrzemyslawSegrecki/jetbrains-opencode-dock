@@ -1,8 +1,8 @@
-package agentdock.changes
+package opencodedock.changes
 
 import kotlinx.serialization.Serializable
-import agentdock.history.ProcessedFileState
-import agentdock.history.AgentDockHistoryService
+import opencodedock.history.ProcessedFileState
+import opencodedock.history.OpenCodeDockHistoryService
 import java.time.Instant
 
 @Serializable
@@ -36,7 +36,7 @@ object ChangesStateService {
     }
 
     fun loadState(projectPath: String, sessionId: String, adapterName: String): ChangesState? {
-        val current = AgentDockHistoryService.loadSessionChanges(projectPath, sessionId, adapterName)
+        val current = OpenCodeDockHistoryService.loadSessionChanges(projectPath, sessionId, adapterName)
         if (current != null) {
             return ChangesState(
                 sessionId = sessionId,
@@ -50,7 +50,7 @@ object ChangesStateService {
     }
 
     fun saveState(projectPath: String, state: ChangesState) {
-        AgentDockHistoryService.saveSessionChanges(
+        OpenCodeDockHistoryService.saveSessionChanges(
             projectPath = projectPath,
             sessionId = state.sessionId,
             adapterName = state.adapterName,
@@ -99,6 +99,6 @@ object ChangesStateService {
     }
 
     fun deleteState(projectPath: String, sessionId: String, adapterName: String) {
-        AgentDockHistoryService.deleteSessionChanges(projectPath, sessionId, adapterName)
+        OpenCodeDockHistoryService.deleteSessionChanges(projectPath, sessionId, adapterName)
     }
 }

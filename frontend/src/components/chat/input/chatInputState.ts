@@ -17,11 +17,8 @@ export interface ChatInputProps {
   isSending: boolean;
   modelGroups: ModelPickerGroup[];
   selectedAgentId: string;
-  onAgentChange: (id: string) => void;
   selectedModelId: string;
   onModelChange: (id: string, targetAgentId?: string) => void;
-  usageSessionKey?: string;
-  status: string;
   modeOptions: DropdownOption[];
   selectedModeId: string;
   onModeChange: (id: string) => void;

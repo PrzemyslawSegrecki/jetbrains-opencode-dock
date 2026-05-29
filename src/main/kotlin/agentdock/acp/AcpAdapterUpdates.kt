@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -59,7 +59,7 @@ internal object AcpAdapterUpdates {
             val request = HttpRequest.newBuilder(URI.create(url))
                 .timeout(Duration.ofSeconds(15))
                 .header("Accept", "application/json")
-                .header("User-Agent", "AgentDock-Plugin")
+                .header("User-Agent", "OpenCodeDock-Plugin")
                 .GET()
                 .build()
             val response = http.send(request, HttpResponse.BodyHandlers.ofString())

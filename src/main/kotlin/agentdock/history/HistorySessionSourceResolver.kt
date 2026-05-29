@@ -1,4 +1,4 @@
-package agentdock.history
+package opencodedock.history
 
 internal object HistorySessionSourceResolver {
     fun findSessionSourceMeta(projectPath: String, sessionId: String, adapterName: String): SessionMeta? {

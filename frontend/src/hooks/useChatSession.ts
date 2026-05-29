@@ -43,7 +43,8 @@ export function useChatSession(
   inheritedAdapterNames: string[] = EMPTY_ADAPTER_NAMES,
   forkBase?: ForkConversationBase,
   onHandoffConsumed?: (handoffId: string) => void,
-  onUserMessageSent?: () => void
+  onUserMessageSent?: () => void,
+  isActive: boolean = false
 ) {
   const [historyMessages, setHistoryMessages] = useState<Message[]>(initialMessages);
   const [liveMessages, setLiveMessages] = useState<Message[]>([]);
@@ -80,6 +81,8 @@ export function useChatSession(
   const canRestartHistorySessionRef = useRef(false);
   const revertInFlightRef = useRef(false);
   const revertHandoffTextRef = useRef<string | null>(null);
+  // A fresh chat has no history replay and no preloaded (fork/continuation) messages.
+  const isFreshChatRef = useRef(!historySession && initialMessages.length === 0);
 
   const {
     applyBufferedChunks,
@@ -350,6 +353,16 @@ export function useChatSession(
     if (consumedHandoffIdRef.current === pendingHandoff.id) return;
     pendingHandoffRef.current = pendingHandoff;
   }, [pendingHandoff]);
+
+  // Eagerly connect the runtime when a fresh chat becomes active, so the session
+  // is ready before the first message instead of starting lazily on first Send.
+  useEffect(() => {
+    if (!isActive || !isFreshChatRef.current) return;
+    if (status !== 'not started') return;
+    if (startedAgentIdRef.current || pendingPromptRef.current) return;
+    if (!selectedAgentId || !selectedAgent?.downloaded) return;
+    startSelectedAgent();
+  }, [isActive, status, selectedAgentId, selectedAgent, startSelectedAgent]);
 
   // =========================================================================
   // Chat Event Listeners (filtered by conversationId)

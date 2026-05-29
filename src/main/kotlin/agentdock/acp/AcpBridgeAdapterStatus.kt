@@ -1,10 +1,10 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
-import agentdock.IdeTheme
-import agentdock.utils.escapeForJsString
+import opencodedock.IdeTheme
+import opencodedock.utils.escapeForJsString
 import java.io.File
 import java.util.concurrent.TimeUnit
 

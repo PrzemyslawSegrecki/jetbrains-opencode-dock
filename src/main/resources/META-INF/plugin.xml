@@ -1,38 +1,26 @@
 <idea-plugin>
-    <id>agentdock</id>
-    <name>Agent Dock</name>
-    <version>1.2.6</version>
-    <vendor url="https://github.com/edgarsr/agentdock">EdgarsR</vendor>
+    <id>opencodedock</id>
+    <name>OpenCode Dock</name>
+    <version>1.3.0</version>
+    <vendor>Przemyslaw Segrecki</vendor>
 
     <description><![CDATA[
-        <p>Agent Dock brings widely used AI coding agents into a unified GUI that follows the active JetBrains IDE theme.</p>
-        <h4>Supported AI agents:</h4>
-        <ul>
-            <li>Claude Code</li>
-            <li>Codex</li>
-            <li>Cursor</li>
-            <li>Gemini CLI</li>
-            <li>GitHub Copilot</li>
-            <li>Kilo</li>
-            <li>OpenCode</li>
-            <li>Qoder</li>
-        </ul>
+        <p>OpenCode Dock brings OpenCode into a dedicated JetBrains tool window that follows the active IDE theme.</p>
         <h4>Features:</h4>
         <ul>
-            <li>Installation, update, and uninstall flows for supported AI agents inside the plugin.</li>
-            <li>Communication with supported AI agents through ACP (Agent Client Protocol) in a GUI.</li>
+            <li>Installation, update, and authentication flows for the OpenCode runtime inside the plugin.</li>
+            <li>Communication with OpenCode through ACP (Agent Client Protocol) in a GUI.</li>
             <li>Structured display of agent output, including tool use, thinking blocks, terminal commands, plans, file edits, and diffs.</li>
             <li>Review of files changed by an agent, with options to accept selected changes or revert them from the IDE.</li>
             <li>Audio notifications for important chat and agent events.</li>
             <li>Slash commands and @ mentions backed by JetBrains project file search.</li>
             <li>Code selections and file references can be added to chat from the editor and project view.</li>
             <li>Images can be pasted into chat and previewed inline.</li>
-            <li>Live token quota and context usage are shown directly in the chat input while prompting, for agents that support it. For Claude Code and Codex, quota data is fetched using the OAuth credentials.</li>
+            <li>Live token quota and context usage are shown directly in the chat input while prompting, when available from OpenCode.</li>
             <li>Voice input for prompts (Windows only).</li>
             <li>Chats can be continued in the IDE terminal when CLI mode is a better fit.</li>
             <li>Chat history supports opening, renaming, deleting, and bulk deletion.</li>
             <li>Chats can be forked from any point.</li>
-            <li>AI agents can be switched within the same chat while preserving the session context.</li>
             <li>MCP server configuration for additional agent tools and external resources.</li>
             <li>Reusable prompts can be saved in the prompt library and inserted into chat when needed.</li>
             <li>System instructions can be managed and applied to agent sessions.</li>
@@ -41,47 +29,47 @@
         <h4>Requirements:</h4>
         <ul>
             <li>JetBrains IDE based on IntelliJ Platform 2025.1 or newer.</li>
-            <li>Some agents use JetBrains IDE terminal for authentication.</li>
-            <li>On macOS and Linux, installing some agents requires curl and tar.</li>
+            <li>OpenCode uses the JetBrains IDE terminal for some authentication and runtime flows.</li>
+            <li>On macOS and Linux, installing the runtime requires curl and tar.</li>
         </ul>
     ]]></description>
 
     <change-notes><![CDATA[
         <ul>
-            <li>Improved adapter startup timeout handling and Gemini usage patching.</li>
-            <li>Fixed task/todo rendering and several chat UI scrolling and activity display issues.</li>
+            <li>Fixed tool window icon visibility when inactive on light themes.</li>
+            <li>Rebranded from Agent Dock to OpenCode Dock with simplified single-provider UX.</li>
         </ul>
     ]]></change-notes>
 
      <depends>com.intellij.modules.platform</depends>
      <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="agentdock.acp.AcpQuotaService"/>
-        <postStartupActivity implementation="agentdock.acp.AcpStartupActivity"/>
-         <toolWindow id="Agent Dock" icon="/icons/agent_dock_toolwindow.svg" anchor="right"
-                     factoryClass="agentdock.AgentDockToolWindowFactory"/>
-         <statusBarWidgetFactory id="AgentDockQuotaWidget" implementation="agentdock.ui.AgentDockQuotaWidgetFactory"/>
+        <applicationService serviceImplementation="opencodedock.acp.AcpQuotaService"/>
+        <postStartupActivity implementation="opencodedock.acp.AcpStartupActivity"/>
+         <toolWindow id="OpenCode Dock" icon="/icons/opencode.svg" anchor="right"
+                     factoryClass="opencodedock.OpenCodeDockToolWindowFactory"/>
+         <statusBarWidgetFactory id="OpenCodeDockQuotaWidget" implementation="opencodedock.ui.OpenCodeDockQuotaWidgetFactory"/>
      </extensions>
 
     <actions>
-        <action id="AgentDock.AddCodeReferenceToChatAction"
-                class="agentdock.AddCodeReferenceToChatAction"
+        <action id="OpenCodeDock.AddCodeReferenceToChatAction"
+                class="opencodedock.AddCodeReferenceToChatAction"
                 text="Add to Chat"
                 description="Add the selected code range to the chat input"
-                icon="/icons/agent_dock_toolwindow.svg">
+                icon="/icons/opencode.svg">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
-        <action id="AgentDock.AddFileReferenceToChatAction"
-                class="agentdock.AddFileReferenceToChatAction"
+        <action id="OpenCodeDock.AddFileReferenceToChatAction"
+                class="opencodedock.AddFileReferenceToChatAction"
                 text="Add to Chat"
                 description="Add the selected file reference to the chat"
-                icon="/icons/agent_dock_toolwindow.svg">
+                icon="/icons/opencode.svg">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
-        <action id="AgentDock.GenerateGitCommitMessageAction"
-                class="agentdock.gitcommit.GenerateGitCommitMessageAction"
+        <action id="OpenCodeDock.GenerateGitCommitMessageAction"
+                class="opencodedock.gitcommit.GenerateGitCommitMessageAction"
                 text="Generate Commit Message"
                 description="Generate a commit message with the configured AI agent"
-                icon="/icons/agent_dock_toolwindow.svg">
+                icon="/icons/opencode.svg">
             <add-to-group group-id="Vcs.MessageActionGroup" anchor="last"/>
         </action>
     </actions>

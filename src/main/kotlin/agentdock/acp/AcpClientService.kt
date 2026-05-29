@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.client.Client
 import com.agentclientprotocol.client.ClientInfo

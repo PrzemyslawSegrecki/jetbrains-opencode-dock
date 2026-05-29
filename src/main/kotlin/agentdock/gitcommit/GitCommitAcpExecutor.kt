@@ -1,4 +1,4 @@
-package agentdock.gitcommit
+package opencodedock.gitcommit
 
 import com.agentclientprotocol.client.ClientSession
 import com.agentclientprotocol.client.ClientOperationsFactory
@@ -22,16 +22,16 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonElement
 import java.util.concurrent.ConcurrentLinkedQueue
-import agentdock.acp.AcpAdapterPaths
-import agentdock.acp.AcpClientService
-import agentdock.acp.awaitPendingSessionUpdates
-import agentdock.acp.ensureExecutionTargetCurrent
-import agentdock.acp.ensureSharedProcessStarted
-import agentdock.acp.processKey
-import agentdock.acp.resolveModelToApply
-import agentdock.acp.resolveSessionCwd
-import agentdock.acp.serializeContentBlock
-import agentdock.history.AgentDockHistoryService
+import opencodedock.acp.AcpAdapterPaths
+import opencodedock.acp.AcpClientService
+import opencodedock.acp.awaitPendingSessionUpdates
+import opencodedock.acp.ensureExecutionTargetCurrent
+import opencodedock.acp.ensureSharedProcessStarted
+import opencodedock.acp.processKey
+import opencodedock.acp.resolveModelToApply
+import opencodedock.acp.resolveSessionCwd
+import opencodedock.acp.serializeContentBlock
+import opencodedock.history.OpenCodeDockHistoryService
 
 internal class GitCommitAcpExecutor(
     private val project: Project,
@@ -131,7 +131,7 @@ internal class GitCommitAcpExecutor(
             val sessionId = ephemeralSessionId
             if (!sessionId.isNullOrBlank()) {
                 runCatching {
-                    AgentDockHistoryService.deleteSessionImmediately(project.basePath, sessionId, adapterInfo.id)
+                    OpenCodeDockHistoryService.deleteSessionImmediately(project.basePath, sessionId, adapterInfo.id)
                 }
             }
         }

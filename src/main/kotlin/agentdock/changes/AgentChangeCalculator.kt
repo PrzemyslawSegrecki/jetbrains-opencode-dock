@@ -1,4 +1,4 @@
-package agentdock.changes
+package opencodedock.changes
 
 import com.github.difflib.DiffUtils
 import com.intellij.openapi.project.Project

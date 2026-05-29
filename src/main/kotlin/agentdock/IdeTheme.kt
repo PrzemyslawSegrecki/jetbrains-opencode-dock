@@ -1,10 +1,10 @@
-package agentdock
+package opencodedock
 
 import com.intellij.ui.JBColor
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorColors
-import agentdock.settings.GlobalSettingsStore
+import opencodedock.settings.GlobalSettingsStore
 import java.awt.Color
 import java.util.Locale
 import javax.swing.UIManager

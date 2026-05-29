@@ -1,8 +1,8 @@
-package agentdock.acp
+package opencodedock.acp
 
 import org.cef.browser.CefBrowser
-import agentdock.BuildConfig
-import agentdock.utils.escapeForJsString
+import opencodedock.BuildConfig
+import opencodedock.utils.escapeForJsString
 
 
 /**

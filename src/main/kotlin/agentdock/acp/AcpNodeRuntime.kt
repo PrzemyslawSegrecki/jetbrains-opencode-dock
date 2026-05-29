@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import kotlinx.coroutines.CancellationException

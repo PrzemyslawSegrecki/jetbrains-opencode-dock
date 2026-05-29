@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.client.Client
 import com.agentclientprotocol.client.ClientInfo
@@ -37,8 +37,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.util.Collections
-import agentdock.BuildConfig
-import agentdock.history.AgentDockHistoryService
+import opencodedock.BuildConfig
+import opencodedock.history.OpenCodeDockHistoryService
 
 // Keep this aligned with the broader ACP startup budget.
 // A freshly updated adapter, especially Gemini CLI, can need materially longer than 60s
@@ -176,7 +176,7 @@ private fun AcpClientService.triggerBackgroundHistorySyncIfInitializationsSettle
 
     scope.launch {
         try {
-            AgentDockHistoryService.startBackgroundHistorySync(projectPath)
+            OpenCodeDockHistoryService.startBackgroundHistorySync(projectPath)
         } finally {
             historySyncAfterInitializationInFlight.set(false)
         }
@@ -427,7 +427,7 @@ internal suspend fun AcpClientService.initializeSharedProcessAtStartup(
             val metadataResult = fetchAdapterRuntimeMetadata(c, adapterInfo)
             adapterRuntimeMetadataMap[requestedAdapterName] = metadataResult.metadata
             persistAdapterRuntimeMetadataCache(requestedAdapterName, metadataResult.metadata)
-            AgentDockHistoryService.registerEphemeralSession(project.basePath, requestedAdapterName, metadataResult.sessionId)
+            OpenCodeDockHistoryService.registerEphemeralSession(project.basePath, requestedAdapterName, metadataResult.sessionId)
         } catch (_: kotlinx.serialization.SerializationException) {
             // Protocol version mismatch between adapter binary and ACP SDK -
             // models/modes will fall back to config defaults in pushAdapters.

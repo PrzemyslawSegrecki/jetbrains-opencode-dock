@@ -1,6 +1,6 @@
-package agentdock.history
+package opencodedock.history
 
-import agentdock.utils.atomicWriteText
+import opencodedock.utils.atomicWriteText
 import java.time.Instant
 
 internal object HistoryConversationIndexService {

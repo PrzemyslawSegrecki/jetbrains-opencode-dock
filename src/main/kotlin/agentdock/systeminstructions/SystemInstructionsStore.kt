@@ -1,11 +1,11 @@
-package agentdock.systeminstructions
+package opencodedock.systeminstructions
 
 import com.agentclientprotocol.model.ContentBlock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import agentdock.acp.AcpAdapterPaths
-import agentdock.utils.atomicWriteText
+import opencodedock.acp.AcpAdapterPaths
+import opencodedock.utils.atomicWriteText
 import java.io.File
 
 @Serializable

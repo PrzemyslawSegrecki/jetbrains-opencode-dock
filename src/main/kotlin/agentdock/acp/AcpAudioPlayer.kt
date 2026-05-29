@@ -1,9 +1,9 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import agentdock.settings.GlobalSettingsStore
+import opencodedock.settings.GlobalSettingsStore
 import java.io.BufferedInputStream
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem

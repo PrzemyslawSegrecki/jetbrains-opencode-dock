@@ -1,10 +1,10 @@
-package agentdock.history
+package opencodedock.history
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 
-object AgentDockHistoryService {
+object OpenCodeDockHistoryService {
     fun registerEphemeralSession(projectPath: String?, adapterName: String, sessionId: String) {
         val cleanProjectPath = canonicalHistoryProjectPath(projectPath)
         val cleanAdapterName = adapterName.trim()

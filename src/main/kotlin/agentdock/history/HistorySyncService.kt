@@ -1,4 +1,4 @@
-package agentdock.history
+package opencodedock.history
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -6,10 +6,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import agentdock.acp.AcpAdapterConfig
-import agentdock.acp.AcpAdapterPaths
-import agentdock.acp.AcpClientService
-import agentdock.acp.listHistorySessions
+import opencodedock.acp.AcpAdapterConfig
+import opencodedock.acp.AcpAdapterPaths
+import opencodedock.acp.AcpClientService
+import opencodedock.acp.listHistorySessions
 import java.util.concurrent.ConcurrentHashMap
 
 internal object HistorySyncService {
@@ -196,19 +196,6 @@ internal object HistorySyncService {
         val acpSessions = collectSessionListMeta(projectPath)
         result.addAll(acpSessions.sessions)
         scannedAdapters.addAll(acpSessions.scannedAdapters)
-
-        AdapterHistoryRegistry.all().forEach { history ->
-            if (runCatching { AcpAdapterConfig.getAdapterInfo(history.adapterId).supportsSessionList }.getOrDefault(true)) {
-                return@forEach
-            }
-            if (!AcpAdapterPaths.isDownloaded(history.adapterId)) return@forEach
-            runCatching {
-                history.collectSessions(projectPath)
-            }.onSuccess { sessions ->
-                result.addAll(sessions)
-                scannedAdapters.add(history.adapterId)
-            }
-        }
 
         triggerEphemeralSessionDeletion(projectPath, ephemeralEntries, result)
 

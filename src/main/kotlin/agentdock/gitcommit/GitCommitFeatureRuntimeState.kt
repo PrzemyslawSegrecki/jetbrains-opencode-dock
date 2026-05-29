@@ -1,4 +1,4 @@
-package agentdock.gitcommit
+package opencodedock.gitcommit
 
 object GitCommitFeatureRuntimeState {
     @Volatile

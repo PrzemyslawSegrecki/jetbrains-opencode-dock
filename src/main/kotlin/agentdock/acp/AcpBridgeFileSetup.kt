@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.application.readAction
@@ -9,14 +9,14 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import kotlinx.serialization.decodeFromString
-import agentdock.changes.AgentChangeCalculator
-import agentdock.changes.AgentDiffViewer
-import agentdock.changes.ChangesState
-import agentdock.changes.ChangesStateService
-import agentdock.changes.UndoFileHandler
-import agentdock.changes.UndoOperation
-import agentdock.history.AgentDockHistoryService
-import agentdock.utils.LocalFilePathPolicy
+import opencodedock.changes.AgentChangeCalculator
+import opencodedock.changes.AgentDiffViewer
+import opencodedock.changes.ChangesState
+import opencodedock.changes.ChangesStateService
+import opencodedock.changes.UndoFileHandler
+import opencodedock.changes.UndoOperation
+import opencodedock.history.OpenCodeDockHistoryService
+import opencodedock.utils.LocalFilePathPolicy
 import java.io.File
 
 

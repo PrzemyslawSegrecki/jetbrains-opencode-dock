@@ -16,7 +16,6 @@ import PermissionBar from './PermissionBar';
 import FileChangesPanel from './FileChangesPanel';
 import ConfirmationModal from '../ConfirmationModal';
 import { Tooltip } from './shared/Tooltip';
-import { useAgentHandoffRequest } from './session/useAgentHandoffRequest';
 import { useChatInputResize } from './session/useChatInputResize';
 import { useChatSessionNotifications } from './session/useChatSessionNotifications';
 import { useImageOverlayActions } from './session/useImageOverlayActions';
@@ -38,7 +37,6 @@ interface ChatSessionProps {
   onCanMarkReadChange?: (canMarkRead: boolean) => void;
   onPermissionRequestChange?: (hasPendingPermission: boolean) => void;
   onProcessingChange?: (isProcessing: boolean) => void;
-  onAgentChangeRequest?: (payload: { agentId: string; handoffText: string }) => void;
   onForkRequest?: (payload: { agentId: string; messages: Message[]; handoffText: string }) => void;
   onHandoffConsumed?: (handoffId: string) => void;
   onSessionStateChange?: (state: { acpSessionId: string; adapterName: string }) => void;
@@ -61,7 +59,6 @@ export default function ChatSessionView({
   onCanMarkReadChange,
   onPermissionRequestChange,
   onProcessingChange,
-  onAgentChangeRequest,
   onForkRequest,
   onHandoffConsumed,
   onSessionStateChange
@@ -104,7 +101,8 @@ export default function ChatSessionView({
     inheritedAdapterNames,
     forkBase,
     onHandoffConsumed,
-    onUserMessageSent
+    onUserMessageSent,
+    isActive
   );
 
   const {
@@ -187,14 +185,6 @@ export default function ChatSessionView({
     if (!isActive || isHistoryReplaying || status !== 'prompting') return;
     return acquireJcefLivePromptRepaint();
   }, [isActive, isHistoryReplaying, status]);
-
-  const handleAgentChange = useAgentHandoffRequest({
-    conversationId,
-    selectedAgentId,
-    messages,
-    fileChanges,
-    onAgentChangeRequest,
-  });
 
   const handleForkFromMessage = useCallback((messageId: string) => {
     if (!onForkRequest || !selectedAgentId || messages.length === 0) return;
@@ -306,16 +296,10 @@ export default function ChatSessionView({
             onSend={handleSend}
             onStop={handleStop}
             isSending={isSending}
-            usageSessionKey={acpSessionId || undefined}
-            status={status}
-
             modelGroups={modelGroups}
             selectedAgentId={selectedAgentId}
-            onAgentChange={handleAgentChange}
-            
             selectedModelId={selectedModelId}
             onModelChange={handleModelChange}
-            
             modeOptions={modeOptions}
             selectedModeId={selectedModeId}
             onModeChange={handleModeChange}

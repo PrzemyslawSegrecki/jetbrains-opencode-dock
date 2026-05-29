@@ -1,10 +1,10 @@
-package agentdock
+package opencodedock
 
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.jcef.JBCefBrowser
-import agentdock.utils.toProjectRelativePath
+import opencodedock.utils.toProjectRelativePath
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.*
 import java.io.File

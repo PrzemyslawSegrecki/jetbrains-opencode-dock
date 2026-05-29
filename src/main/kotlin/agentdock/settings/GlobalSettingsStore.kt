@@ -1,10 +1,10 @@
-package agentdock.settings
+package opencodedock.settings
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import agentdock.acp.AcpAdapterPaths
-import agentdock.gitcommit.GitCommitFeatureRuntimeState
-import agentdock.utils.atomicWriteText
+import opencodedock.acp.AcpAdapterPaths
+import opencodedock.gitcommit.GitCommitFeatureRuntimeState
+import opencodedock.utils.atomicWriteText
 import java.io.File
 
 object GlobalSettingsStore {

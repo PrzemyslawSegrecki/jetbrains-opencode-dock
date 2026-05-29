@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.ConcurrentHashMap

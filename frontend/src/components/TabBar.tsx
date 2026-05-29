@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Menu, Plus } from 'lucide-react';
 import { AgentOption, ChatTab, TabUiFlags, isAgentRunnable } from '../types/chat';
 import { HamburgerMenuPanel } from './tabbar/HamburgerMenuPanel';
+import { RuntimeStatusIndicator } from './tabbar/RuntimeStatusIndicator';
 import { TabItem } from './tabbar/TabItem';
 import { HistoryTabIcon } from './tabbar/TabIcons';
 import { TabOverflowMenu } from './tabbar/TabOverflowMenu';
@@ -16,10 +17,8 @@ interface TabBarProps {
   onCloseTab: (id: string) => void;
   onCloseAllTabs: () => void;
   onNewTab: () => void;
-  onNewTabWithAgent: (agentId: string) => void;
   agents: AgentOption[];
   onOpenHistory: () => void;
-  onOpenManagement: () => void;
   onOpenDesignSystem: () => void;
   onOpenMcp: () => void;
   onOpenPromptLibrary: () => void;
@@ -36,10 +35,8 @@ export default function TabBar({
   onCloseTab,
   onCloseAllTabs,
   onNewTab,
-  onNewTabWithAgent,
   agents,
   onOpenHistory,
-  onOpenManagement,
   onOpenDesignSystem,
   onOpenMcp,
   onOpenPromptLibrary,
@@ -246,6 +243,8 @@ export default function TabBar({
 
       {/* Controls: +, More (chevron), Hamburger */}
       <div className="flex items-center bg-background pl-1 pr-2 gap-0.5 z-10 shadow-[-10px_0_10px_-5px_var(--background)]">
+        <RuntimeStatusIndicator agents={agents} />
+
         {/* New Tab (+ matches default agent) */}
         <button
           onClick={onNewTab}
@@ -304,7 +303,7 @@ export default function TabBar({
               onSelectTab={onSelectTab}
               onCloseTab={onCloseTab}
               onCloseAllTabs={onCloseAllTabs}
-              onNewTabWithAgent={onNewTabWithAgent}
+              onNewTab={onNewTab}
               onCloseMenu={() => setMenuOpen(false)}
             />
           )}
@@ -366,7 +365,6 @@ export default function TabBar({
               menuButtonRef={hamburgerButtonRef}
               onCloseMenu={() => setHamburgerMenuOpen(false)}
               onOpenHistory={onOpenHistory}
-              onOpenManagement={onOpenManagement}
               onOpenDesignSystem={onOpenDesignSystem}
               onOpenMcp={onOpenMcp}
               onOpenPromptLibrary={onOpenPromptLibrary}

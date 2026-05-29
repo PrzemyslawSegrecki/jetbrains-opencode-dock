@@ -1,4 +1,4 @@
-package agentdock.history
+package opencodedock.history
 
 internal object HistoryEnvironment {
     fun historySyncKey(projectPath: String): String = projectPath

@@ -1,4 +1,4 @@
-package agentdock.history
+package opencodedock.history
 
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -43,7 +43,7 @@ class HistoryStorageTest {
     @Test
     fun `invalid conversation ids are rejected before replay files are saved`() {
         withIsolatedHistoryStorage("agent-dock-history-invalid") { projectDir ->
-            val saved = AgentDockHistoryService.saveConversationReplay(
+            val saved = OpenCodeDockHistoryService.saveConversationReplay(
                 projectPath = projectDir.absolutePath,
                 conversationId = "../outside",
                 data = ConversationReplayData()
@@ -75,7 +75,7 @@ class HistoryStorageTest {
         withIsolatedHistoryStorage("agent-dock-history-used-adapters") { projectDir ->
             val projectPath = projectDir.absolutePath
 
-            AgentDockHistoryService.upsertRuntimeSessionMetadata(
+            OpenCodeDockHistoryService.upsertRuntimeSessionMetadata(
                 projectPath = projectPath,
                 conversationId = "conv-used-adapters",
                 sessionId = "session-1",
@@ -85,7 +85,7 @@ class HistoryStorageTest {
                 inheritedAdapterNames = listOf("claude", "gemini", "claude"),
                 touchUpdatedAt = true
             )
-            AgentDockHistoryService.upsertRuntimeSessionMetadata(
+            OpenCodeDockHistoryService.upsertRuntimeSessionMetadata(
                 projectPath = projectPath,
                 conversationId = "conv-used-adapters",
                 sessionId = "session-2",
@@ -106,7 +106,7 @@ class HistoryStorageTest {
         withIsolatedHistoryStorage("agent-dock-history-fork-replay") { projectDir ->
             val projectPath = projectDir.absolutePath
 
-            AgentDockHistoryService.saveConversationReplay(
+            OpenCodeDockHistoryService.saveConversationReplay(
                 projectPath = projectPath,
                 conversationId = "source-conversation",
                 data = ConversationReplayData(
@@ -125,7 +125,7 @@ class HistoryStorageTest {
                 )
             )
 
-            AgentDockHistoryService.upsertRuntimeSessionMetadata(
+            OpenCodeDockHistoryService.upsertRuntimeSessionMetadata(
                 projectPath = projectPath,
                 conversationId = "fork-conversation",
                 sessionId = "fork-session",
@@ -134,7 +134,7 @@ class HistoryStorageTest {
                 titleCandidate = "Forked",
                 touchUpdatedAt = true
             )
-            AgentDockHistoryService.appendConversationPrompt(
+            OpenCodeDockHistoryService.appendConversationPrompt(
                 projectPath = projectPath,
                 conversationId = "fork-conversation",
                 sessionId = "fork-session",
@@ -144,7 +144,7 @@ class HistoryStorageTest {
                 assistantMeta = ConversationAssistantMetadata(agentId = "openai"),
                 forkBase = ForkConversationBase(sourceConversationId = "source-conversation", promptCount = 2)
             )
-            AgentDockHistoryService.appendConversationPrompt(
+            OpenCodeDockHistoryService.appendConversationPrompt(
                 projectPath = projectPath,
                 conversationId = "fork-conversation",
                 sessionId = "fork-session",
@@ -164,7 +164,7 @@ class HistoryStorageTest {
             assertEquals("fork-session", replay?.sessions?.get(1)?.sessionId)
             assertEquals(2, replay?.sessions?.get(1)?.prompts?.size)
 
-            AgentDockHistoryService.upsertRuntimeSessionMetadata(
+            OpenCodeDockHistoryService.upsertRuntimeSessionMetadata(
                 projectPath = projectPath,
                 conversationId = "fork-conversation",
                 sessionId = "fork-session",
@@ -207,7 +207,7 @@ class HistoryStorageTest {
                     HistoryStorage.projectIndexFile(projectDir.absolutePath).parentFile
                 }.getOrNull()
                 runCatching { projectHistoryDir?.deleteRecursively() }
-                runCatching { File(testHome, ".agent-dock").deleteRecursively() }
+                runCatching { File(testHome, ".opencode-dock").deleteRecursively() }
                 runCatching { projectDir.deleteRecursively() }
                 if (originalUserHome == null) {
                     System.clearProperty("user.home")

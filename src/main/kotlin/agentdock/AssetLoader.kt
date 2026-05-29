@@ -1,4 +1,4 @@
-package agentdock
+package opencodedock
 
 import java.nio.charset.StandardCharsets
 

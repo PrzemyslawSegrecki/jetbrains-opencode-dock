@@ -1,4 +1,4 @@
-package agentdock.systeminstructions
+package opencodedock.systeminstructions
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.jcef.JBCefBrowser
@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.cef.browser.CefBrowser
-import agentdock.utils.escapeForJsString
+import opencodedock.utils.escapeForJsString
 
 private val json = Json { ignoreUnknownKeys = true }
 

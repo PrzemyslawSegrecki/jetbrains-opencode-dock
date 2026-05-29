@@ -1,4 +1,4 @@
-package agentdock.gitcommit
+package opencodedock.gitcommit
 
 internal object GitCommitResponseParser {
     private val commitTagRegex = Regex(

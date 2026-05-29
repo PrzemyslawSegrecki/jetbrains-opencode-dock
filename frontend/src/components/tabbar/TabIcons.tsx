@@ -2,7 +2,6 @@ import { Bookmark, Bot, FileText, History, Network, Palette, SlidersHorizontal }
 import { AgentOption, ChatTab } from '../../types/chat';
 import { sanitizeSvg } from '../../utils/sanitizeHtml';
 
-export const ManagementTabIcon = () => <Bot size={14} className="text-foreground/70 flex-shrink-0" />;
 export const DesignTabIcon = () => <Palette size={14} className="text-foreground/70 flex-shrink-0" />;
 export const McpTabIcon = () => <Network size={14} className="text-foreground/70 flex-shrink-0" />;
 export const HistoryTabIcon = () => <History size={14} className="text-foreground/70 flex-shrink-0" />;
@@ -24,7 +23,6 @@ export const getAgentIcon = (agentId: string | undefined, agents: AgentOption[])
 };
 
 export const getTabIcon = (tab: ChatTab, agents: AgentOption[]) => {
-  if (tab.type === 'management') return <ManagementTabIcon />;
   if (tab.type === 'design') return <DesignTabIcon />;
   if (tab.type === 'history') return <HistoryTabIcon />;
   if (tab.type === 'mcp') return <McpTabIcon />;

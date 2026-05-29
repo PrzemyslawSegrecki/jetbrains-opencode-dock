@@ -1,7 +1,7 @@
-package agentdock.acp
+package opencodedock.acp
 
-import agentdock.history.AgentDockHistoryService
-import agentdock.history.ConversationReplayData
+import opencodedock.history.OpenCodeDockHistoryService
+import opencodedock.history.ConversationReplayData
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,7 +83,7 @@ internal fun AcpBridge.installConversationHistoryQueries() {
                 scope.launch(Dispatchers.Default) {
                     replaySeqByChatId[chatId] = 0
                     try {
-                        val storedConversation = AgentDockHistoryService.loadConversationReplay(projectPath, conversationId)
+                        val storedConversation = OpenCodeDockHistoryService.loadConversationReplay(projectPath, conversationId)
                         if (storedConversation != null) {
                             pushConversationReplayLoaded(chatId, storedConversation)
 
@@ -116,7 +116,7 @@ internal fun AcpBridge.installConversationHistoryQueries() {
                                 }
                             }
                         } else {
-                            val sessionsChain = AgentDockHistoryService.getConversationSessions(projectPath, conversationId)
+                            val sessionsChain = OpenCodeDockHistoryService.getConversationSessions(projectPath, conversationId)
                             if (sessionsChain.isEmpty()) {
                                 throw IllegalStateException("Conversation '$conversationId' not found")
                             }
@@ -159,7 +159,7 @@ internal fun AcpBridge.installConversationHistoryQueries() {
         addHandler { payload ->
             scope.launch(Dispatchers.IO) {
                 parseSessionMetadataUpdatePayload(payload)?.let { request ->
-                    AgentDockHistoryService.upsertRuntimeSessionMetadata(
+                    OpenCodeDockHistoryService.upsertRuntimeSessionMetadata(
                         projectPath = service.project.basePath,
                         conversationId = request.conversationId,
                         sessionId = request.sessionId,
@@ -180,7 +180,7 @@ internal fun AcpBridge.installConversationHistoryQueries() {
         addHandler { payload ->
             scope.launch(Dispatchers.IO) {
                 parseContinueConversationPayload(payload)?.let { request ->
-                    AgentDockHistoryService.appendSessionToConversation(
+                    OpenCodeDockHistoryService.appendSessionToConversation(
                         projectPath = service.project.basePath,
                         previousSessionId = request.previousSessionId,
                         previousAdapterName = request.previousAdapterName,
@@ -199,7 +199,7 @@ internal fun AcpBridge.installConversationHistoryQueries() {
             scope.launch(Dispatchers.IO) {
                 val result = runCatching {
                     val request = Json.decodeFromString<SaveConversationTranscriptPayload>(payload ?: "{}")
-                    val filePath = AgentDockHistoryService.saveConversationTranscript(
+                    val filePath = OpenCodeDockHistoryService.saveConversationTranscript(
                         projectPath = service.project.basePath,
                         conversationId = request.conversationId,
                         transcriptText = request.text

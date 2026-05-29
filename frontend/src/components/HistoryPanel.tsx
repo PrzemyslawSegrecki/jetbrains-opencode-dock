@@ -29,6 +29,9 @@ export default function HistoryPanel({ availableAgents, onOpenSession }: History
     adapterDisplay,
     uniqueAgentsInHistory,
     filteredHistoryList,
+    visibleHistoryList,
+    hasMoreHistory,
+    showMoreHistory,
     selectedAgentLabel,
     selectedCount,
     filteredConversationIds,
@@ -178,7 +181,7 @@ export default function HistoryPanel({ availableAgents, onOpenSession }: History
             No history available yet.
           </div>
         ) : (
-          filteredHistoryList.map((item) => {
+          visibleHistoryList.map((item) => {
             const conversationId = item.conversationId;
             return (
               <HistoryListItem
@@ -202,6 +205,13 @@ export default function HistoryPanel({ availableAgents, onOpenSession }: History
               />
             );
           })
+        )}
+        {!isLoading && hasMoreHistory && (
+          <div className="flex justify-center py-3">
+            <Button variant="secondary" onClick={showMoreHistory}>
+              More ({filteredHistoryList.length - visibleHistoryList.length})
+            </Button>
+          </div>
         )}
         </div>
       </div>

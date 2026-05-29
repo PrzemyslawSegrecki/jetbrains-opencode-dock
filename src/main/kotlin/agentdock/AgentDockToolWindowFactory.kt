@@ -1,4 +1,4 @@
-package agentdock
+package opencodedock
 
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.application.ApplicationManager
@@ -22,17 +22,17 @@ import kotlinx.coroutines.SupervisorJob
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.handler.CefLoadHandlerAdapter
-import agentdock.acp.AcpClientService
-import agentdock.acp.AcpBridge
-import agentdock.acp.pushAdapters
-import agentdock.acp.injectDebugApi
-import agentdock.acp.injectReadySignal
-import agentdock.acp.shutdown
-import agentdock.history.HistoryBridge
-import agentdock.mcp.McpBridge
-import agentdock.promptlibrary.PromptLibraryBridge
-import agentdock.settings.SettingsBridge
-import agentdock.systeminstructions.SystemInstructionsBridge
+import opencodedock.acp.AcpClientService
+import opencodedock.acp.AcpBridge
+import opencodedock.acp.pushAdapters
+import opencodedock.acp.injectDebugApi
+import opencodedock.acp.injectReadySignal
+import opencodedock.acp.shutdown
+import opencodedock.history.HistoryBridge
+import opencodedock.mcp.McpBridge
+import opencodedock.promptlibrary.PromptLibraryBridge
+import opencodedock.settings.SettingsBridge
+import opencodedock.systeminstructions.SystemInstructionsBridge
 import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.FlowLayout
@@ -41,10 +41,10 @@ import javax.swing.JPanel
 import javax.swing.JProgressBar
 
 
-class AgentDockToolWindowFactory : ToolWindowFactory, DumbAware {
+class OpenCodeDockToolWindowFactory : ToolWindowFactory, DumbAware {
     companion object {
         private val IS_DEV_MODE = BuildConfig.IS_DEV
-        private val LOG = Logger.getInstance(AgentDockToolWindowFactory::class.java)
+        private val LOG = Logger.getInstance(OpenCodeDockToolWindowFactory::class.java)
     }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -153,7 +153,7 @@ class AgentDockToolWindowFactory : ToolWindowFactory, DumbAware {
 
                         val frontendDiagnosticsQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase)
                         frontendDiagnosticsQuery.addHandler { payload ->
-                            LOG.warn("[AgentDock frontend] $payload")
+                            LOG.warn("[OpenCodeDock frontend] $payload")
                             JBCefJSQuery.Response("ok")
                         }
 

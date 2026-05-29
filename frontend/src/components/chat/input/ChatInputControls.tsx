@@ -10,11 +10,8 @@ import { DropdownOption } from '../../../types/chat';
 import { ModelPickerGroup } from '../../../hooks/chatSession/agentSelection';
 import { SlashCommandItem } from './slashCommands';
 import ChatDropdown from '../ChatDropdown';
-import { GroupedModelDropdown } from '../GroupedModelDropdown';
-import { ChatUsageIndicator } from '../../usage/chat/ChatUsageIndicator';
 import { ContextUsageIndicator } from '../shared/ContextUsageIndicator';
 import { Tooltip } from '../shared/Tooltip';
-import { AdapterUsageLifecycleProvider } from '../../../hooks/useAdapterUsage';
 
 interface ChatInputControlsProps {
   controlsRowRef: RefObject<HTMLDivElement>;
@@ -29,8 +26,6 @@ interface ChatInputControlsProps {
   modeOptions: DropdownOption[];
   isSending: boolean;
   hasSelectedAgent: boolean;
-  status: string;
-  usageSessionKey?: string;
   contextTokensUsed?: number;
   contextWindowSize?: number;
   inputValue: string;
@@ -43,7 +38,6 @@ interface ChatInputControlsProps {
   promptLibrarySlashItems: SlashCommandItem[];
   handleInsertSlashItem: (itemId: string, items: SlashCommandItem[]) => void;
   handleVoiceInput: () => void;
-  onAgentChange: (id: string) => void;
   onModelChange: (id: string, targetAgentId?: string) => void;
   onModeChange: (id: string) => void;
   onSend: () => void;
@@ -63,8 +57,6 @@ export function ChatInputControls({
   modeOptions,
   isSending,
   hasSelectedAgent,
-  status,
-  usageSessionKey,
   contextTokensUsed,
   contextWindowSize,
   inputValue,
@@ -77,13 +69,25 @@ export function ChatInputControls({
   promptLibrarySlashItems,
   handleInsertSlashItem,
   handleVoiceInput,
-  onAgentChange,
   onModelChange,
   onModeChange,
   onSend,
   onStop,
 }: ChatInputControlsProps) {
   const hasInput = !!inputValue.trim();
+  const selectedGroup = modelGroups.find((group) => (
+    group.agentId === selectedAgentId && group.options.some((option) => option.modelId === selectedModelId)
+  )) ?? modelGroups.find((group) => group.agentId === selectedAgentId) ?? modelGroups[0];
+  const selectedGroupOptionId = selectedGroup ? `${selectedGroup.agentId}:${selectedGroup.label}` : '';
+  const modelOptions = modelGroups.map((group) => ({
+    id: `${group.agentId}:${group.label}`,
+    label: group.label,
+    subOptions: group.options.map((option) => ({
+      id: option.modelId,
+      label: option.label,
+      description: option.description,
+    })),
+  }));
 
   return (
     <div ref={controlsRowRef} className="flex flex-wrap items-stretch gap-y-1 px-1 py-1 text-foreground">
@@ -124,18 +128,18 @@ export function ChatInputControls({
           }}
         />
 
-        <GroupedModelDropdown
-          selectedAgentId={selectedAgentId}
-          selectedModelId={selectedModelId}
-          groups={modelGroups}
+        <ChatDropdown
+          value={selectedGroupOptionId}
+          subValue={selectedModelId}
+          options={modelOptions}
           placeholder="Select Model"
-          disabled={isSending}
+          disabled={isSending || modelOptions.length === 0}
           collapsed={collapsedAgentDropdown}
-          onChange={(agentId, modelId) => {
-            if (agentId !== selectedAgentId) {
-              onAgentChange(agentId);
-            }
-            onModelChange(modelId, agentId);
+          showSubValueInTrigger={true}
+          onChange={() => {}}
+          onSubChange={(groupOptionId, modelId) => {
+            const targetGroup = modelGroups.find((group) => `${group.agentId}:${group.label}` === groupOptionId);
+            onModelChange(modelId, targetGroup?.agentId ?? selectedGroup?.agentId);
           }}
           className="ml-0.5"
         />
@@ -149,14 +153,6 @@ export function ChatInputControls({
             onChange={onModeChange}
             className="ml-0.5"
           />
-        )}
-
-        {showAuxIndicators && selectedAgentId && (
-          <AdapterUsageLifecycleProvider
-            value={{enabled: true, isSending, sessionKey: status === 'ready' ? usageSessionKey : undefined,}}
-          >
-            <ChatUsageIndicator agentId={selectedAgentId} modelId={selectedModelId} />
-          </AdapterUsageLifecycleProvider>
         )}
 
         {showAuxIndicators && <ContextUsageIndicator used={contextTokensUsed} size={contextWindowSize} />}

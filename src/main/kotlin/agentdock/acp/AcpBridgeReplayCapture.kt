@@ -1,12 +1,12 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.ContentBlock
 import kotlinx.serialization.json.*
-import agentdock.history.ConversationPromptReplayEntry
-import agentdock.history.ConversationReplayData
-import agentdock.history.ConversationSessionReplayEntry
-import agentdock.history.AgentDockHistoryService
-import agentdock.history.HistoryReplayStore
+import opencodedock.history.ConversationPromptReplayEntry
+import opencodedock.history.ConversationReplayData
+import opencodedock.history.ConversationSessionReplayEntry
+import opencodedock.history.OpenCodeDockHistoryService
+import opencodedock.history.HistoryReplayStore
 
 internal fun AcpBridge.startHistoryReplayCapture(
     chatId: String,
@@ -57,7 +57,7 @@ internal fun AcpBridge.flushHistoryReplayCapture(chatId: String): ConversationRe
         }
     if (sessions.isEmpty()) return null
     val data = HistoryReplayStore.normalizeReplayData(ConversationReplayData(sessions = sessions))
-    AgentDockHistoryService.saveConversationReplay(
+    OpenCodeDockHistoryService.saveConversationReplay(
         projectPath = capture.projectPath,
         conversationId = capture.conversationId,
         data = data

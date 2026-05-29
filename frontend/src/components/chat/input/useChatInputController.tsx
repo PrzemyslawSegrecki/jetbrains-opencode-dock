@@ -39,7 +39,6 @@ export function useChatInputController({
   isSending,
   selectedAgentId,
   selectedModelId,
-  status,
   modeOptions,
   selectedModeId,
   availableCommands,
@@ -123,7 +122,7 @@ export function useChatInputController({
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', updateWidths);
     };
-  }, [selectedAgentId, selectedModelId, selectedModeId, modeOptions.length, status, isSending]);
+  }, [selectedAgentId, selectedModelId, selectedModeId, modeOptions.length, isSending]);
 
   const handleOpenFile = useCallback((filePath: string, line?: number) => {
     openFile(filePath, line);

@@ -170,7 +170,7 @@ export interface TabUiFlags {
   processing: boolean;
 }
 
-export type TabType = 'chat' | 'management' | 'design' | 'history' | 'mcp' | 'system-instructions' | 'prompt-library' | 'settings';
+export type TabType = 'chat' | 'design' | 'history' | 'mcp' | 'system-instructions' | 'prompt-library' | 'settings';
 
 export interface ChatTab {
   id: string;
@@ -476,11 +476,6 @@ declare global {
     __respondPermission?: (requestId: string, decision: string) => void;
     __cancelPrompt?: (conversationId: string, requestId?: string) => void;
     __stopAgent?: (conversationId: string) => void;
-    __downloadAgent?: (adapterId: string) => void;
-    __cancelAgentInstall?: (adapterId: string) => void;
-    __deleteAgent?: (adapterId: string) => void;
-    __updateAgent?: (adapterId: string) => void;
-    __toggleAgentEnabled?: (payload: { adapterId: string; enabled: boolean }) => void;
     __setHiddenModels?: (payload: { adapterId: string; modelIds: string[] }) => void;
     __requestHistoryList?: (projectPath?: string) => void;
     __syncHistoryList?: (projectPath?: string) => void;

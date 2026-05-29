@@ -1,4 +1,4 @@
-package agentdock
+package opencodedock
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -8,7 +8,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.wm.ToolWindowManager
 import org.jetbrains.annotations.NotNull
-import agentdock.utils.toProjectRelativePath
+import opencodedock.utils.toProjectRelativePath
 
 class AddCodeReferenceToChatAction : AnAction(), DumbAware {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -37,7 +37,7 @@ class AddCodeReferenceToChatAction : AnAction(), DumbAware {
             endLine = endLine
         )
 
-        ToolWindowManager.getInstance(project).getToolWindow("Agent Dock")?.activate(
+        ToolWindowManager.getInstance(project).getToolWindow("OpenCode Dock")?.activate(
             { ExternalCodeReferenceDispatcher.dispatch(project, reference) },
             true
         )

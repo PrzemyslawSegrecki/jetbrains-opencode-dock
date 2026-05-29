@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import { AgentOption, ChatTab, PendingHandoffContext } from '../types/chat';
-import { AgentManagementView } from './AgentManagement';
 import { DesignSystemView } from './DesignSystem';
 import HistoryPanel from './HistoryPanel';
 import { McpServersView } from './McpServersView';
@@ -22,7 +21,6 @@ interface AppTabContentProps {
   onCanMarkReadChange: (canMarkRead: boolean) => void;
   onPermissionRequestChange: (hasPendingPermission: boolean) => void;
   onProcessingChange: (isProcessing: boolean) => void;
-  onAgentChangeRequest: Parameters<typeof ChatSessionView>[0]['onAgentChangeRequest'];
   onForkRequest: Parameters<typeof ChatSessionView>[0]['onForkRequest'];
   onHandoffConsumed: (handoffId: string) => void;
   onSessionStateChange: Parameters<typeof ChatSessionView>[0]['onSessionStateChange'];
@@ -41,7 +39,6 @@ export function AppTabContent({
   onCanMarkReadChange,
   onPermissionRequestChange,
   onProcessingChange,
-  onAgentChangeRequest,
   onForkRequest,
   onHandoffConsumed,
   onSessionStateChange,
@@ -73,7 +70,6 @@ export function AppTabContent({
           onCanMarkReadChange={onCanMarkReadChange}
           onPermissionRequestChange={onPermissionRequestChange}
           onProcessingChange={onProcessingChange}
-          onAgentChangeRequest={onAgentChangeRequest}
           onForkRequest={onForkRequest}
           onHandoffConsumed={onHandoffConsumed}
           onSessionStateChange={onSessionStateChange}
@@ -81,7 +77,6 @@ export function AppTabContent({
       )}
       {tab.type !== 'chat' && hasBeenActiveRef.current && (
         <>
-          {tab.type === 'management' && <AgentManagementView initialAgents={availableAgents} isActive={isActive} />}
           {tab.type === 'design' && <DesignSystemView />}
           {tab.type === 'history' && (
             <HistoryPanel availableAgents={availableAgents} onOpenSession={onOpenHistory} />

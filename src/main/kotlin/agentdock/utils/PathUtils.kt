@@ -1,4 +1,4 @@
-package agentdock.utils
+package opencodedock.utils
 
 import com.intellij.openapi.project.Project
 import java.nio.file.Path

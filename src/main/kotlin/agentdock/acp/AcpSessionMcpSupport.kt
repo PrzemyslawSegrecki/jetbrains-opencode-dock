@@ -1,10 +1,10 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.agentclientprotocol.model.EnvVariable
 import com.agentclientprotocol.model.HttpHeader
 import com.agentclientprotocol.model.McpServer
-import agentdock.mcp.McpConfigStore
-import agentdock.mcp.McpServerConfig
+import opencodedock.mcp.McpConfigStore
+import opencodedock.mcp.McpServerConfig
 
 internal fun buildMcpServers(): List<McpServer> =
     McpConfigStore.loadEnabled().mapNotNull { it.toSdkMcpServer() }

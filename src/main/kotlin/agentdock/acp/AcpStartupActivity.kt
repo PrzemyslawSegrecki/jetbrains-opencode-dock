@@ -1,9 +1,9 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import agentdock.mcp.McpConfigStore
-import agentdock.settings.GlobalSettingsStore
+import opencodedock.mcp.McpConfigStore
+import opencodedock.settings.GlobalSettingsStore
 
 class AcpStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {

@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils

@@ -1,10 +1,10 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import agentdock.history.ConversationAssistantMetadata
-import agentdock.history.ForkConversationBase
+import opencodedock.history.ConversationAssistantMetadata
+import opencodedock.history.ForkConversationBase
 
 @Serializable
 internal data class AdapterModelPayload(

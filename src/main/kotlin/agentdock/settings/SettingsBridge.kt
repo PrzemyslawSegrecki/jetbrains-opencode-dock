@@ -1,4 +1,4 @@
-package agentdock.settings
+package opencodedock.settings
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.jcef.JBCefBrowser
@@ -11,9 +11,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.cef.browser.CefBrowser
-import agentdock.acp.AcpQuotaService
-import agentdock.ui.AgentDockQuotaWidgetFactory
-import agentdock.utils.escapeForJsString
+import opencodedock.acp.AcpQuotaService
+import opencodedock.ui.OpenCodeDockQuotaWidgetFactory
+import opencodedock.utils.escapeForJsString
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 
@@ -328,7 +328,7 @@ class SettingsBridge(
             ProjectManager.getInstance().openProjects.forEach { project ->
                 if (!project.isDisposed) {
                     project.getService(StatusBarWidgetsManager::class.java)
-                        ?.updateWidget(AgentDockQuotaWidgetFactory::class.java)
+                        ?.updateWidget(OpenCodeDockQuotaWidgetFactory::class.java)
                 }
             }
         }

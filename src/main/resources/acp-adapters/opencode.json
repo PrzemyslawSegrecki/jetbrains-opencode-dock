@@ -3,7 +3,7 @@
   "name": "OpenCode",
   "iconPath": "/icons/opencode.svg",
   "iconPathLight": "/icons/opencode-light.svg",
-  "iconPathDark": "/icons/opencode-dark.svg",
+  "iconPathDark": "/icons/opencode_dark.svg",
   "distribution": {
     "type": "npm",
     "version": "latest",

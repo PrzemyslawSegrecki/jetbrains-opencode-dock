@@ -18,11 +18,8 @@ export default function ChatInput(props: ChatInputProps) {
     isSending,
     modelGroups,
     selectedAgentId,
-    onAgentChange,
     selectedModelId,
     onModelChange,
-    usageSessionKey,
-    status,
     modeOptions,
     selectedModeId,
     onModeChange,
@@ -121,8 +118,6 @@ export default function ChatInput(props: ChatInputProps) {
             modeOptions={modeOptions}
             isSending={isSending}
             hasSelectedAgent={hasSelectedAgent}
-            status={status}
-            usageSessionKey={usageSessionKey}
             contextTokensUsed={contextTokensUsed}
             contextWindowSize={contextWindowSize}
             inputValue={inputValue}
@@ -135,7 +130,6 @@ export default function ChatInput(props: ChatInputProps) {
             promptLibrarySlashItems={promptLibrarySlashItems}
             handleInsertSlashItem={handleInsertSlashItem}
             handleVoiceInput={handleVoiceInput}
-            onAgentChange={onAgentChange}
             onModelChange={onModelChange}
             onModeChange={onModeChange}
             onSend={onSend}

@@ -97,7 +97,7 @@ class RootErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundar
     return (
       <div className="h-screen bg-background text-foreground flex items-center justify-center p-6">
         <div className="w-full max-w-xl rounded-lg border border-border bg-background-secondary p-5 shadow-sm">
-          <div className="text-base font-semibold">Agent Dock crashed</div>
+          <div className="text-base font-semibold">OpenCode Dock crashed</div>
           <p className="mt-2 text-sm text-foreground/80">
             The plugin UI hit an unexpected frontend error. The details were sent to the IDE log.
           </p>

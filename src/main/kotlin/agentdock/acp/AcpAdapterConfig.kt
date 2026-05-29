@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName

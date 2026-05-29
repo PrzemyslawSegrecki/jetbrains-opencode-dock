@@ -1,6 +1,6 @@
-package agentdock.settings
+package opencodedock.settings
 
-import agentdock.acp.AcpAdapterPaths
+import opencodedock.acp.AcpAdapterPaths
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream

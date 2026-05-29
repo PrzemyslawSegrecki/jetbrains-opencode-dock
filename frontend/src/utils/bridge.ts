@@ -413,14 +413,6 @@ export const ACPBridge = {
     window.__fetchAdapterUsage?.(adapterId);
   },
 
-  cancelAgentInstall: (adapterId: string) => {
-    window.__cancelAgentInstall?.(adapterId);
-  },
-
-  toggleAgentEnabled: (adapterId: string, enabled: boolean) => {
-    window.__toggleAgentEnabled?.({ adapterId, enabled });
-  },
-
   onUsageData: (callback: (e: CustomEvent<{ adapterId: string; json: string }>) => void) => onBridgeEvent(EVENT_NAMES.USAGE_DATA, callback),
 
   onLog: (callback: (e: CustomEvent) => void) => onBridgeEvent(EVENT_NAMES.LOG, callback),

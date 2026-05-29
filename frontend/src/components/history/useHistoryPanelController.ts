@@ -40,8 +40,12 @@ function formatConversationLength(promptCount?: number) {
   return `${promptCount} prompt${promptCount === 1 ? '' : 's'}`;
 }
 
+const INITIAL_HISTORY_PAGE_SIZE = 10;
+const HISTORY_PAGE_INCREMENT = 20;
+
 export function useHistoryPanelController(availableAgents: AgentOption[]) {
   const [historyList, setHistoryList] = useState<HistorySessionMeta[]>([]);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_HISTORY_PAGE_SIZE);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedConversationIds, setSelectedConversationIds] = useState<string[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
@@ -116,6 +120,18 @@ export function useHistoryPanelController(availableAgents: AgentOption[]) {
       return getItemAgents(item).some((a) => selectedAgents.includes(a));
     });
   }, [historyList, selectedAgents]);
+
+  // Reset incremental window when the filter changes.
+  useEffect(() => {
+    setVisibleCount(INITIAL_HISTORY_PAGE_SIZE);
+  }, [selectedAgents]);
+
+  const visibleHistoryList = useMemo(
+    () => filteredHistoryList.slice(0, visibleCount),
+    [filteredHistoryList, visibleCount]
+  );
+  const hasMoreHistory = filteredHistoryList.length > visibleCount;
+  const showMoreHistory = () => setVisibleCount((count) => count + HISTORY_PAGE_INCREMENT);
 
   const selectedAgentLabel = useMemo(() => {
     if (selectedAgents.length !== 1) return '';
@@ -295,6 +311,9 @@ export function useHistoryPanelController(availableAgents: AgentOption[]) {
     adapterDisplay,
     uniqueAgentsInHistory,
     filteredHistoryList,
+    visibleHistoryList,
+    hasMoreHistory,
+    showMoreHistory,
     selectedAgentLabel,
     selectedCount,
     filteredConversationIds,

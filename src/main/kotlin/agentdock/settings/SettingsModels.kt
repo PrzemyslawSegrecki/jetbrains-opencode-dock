@@ -1,4 +1,4 @@
-package agentdock.settings
+package opencodedock.settings
 
 import kotlinx.serialization.Serializable
 

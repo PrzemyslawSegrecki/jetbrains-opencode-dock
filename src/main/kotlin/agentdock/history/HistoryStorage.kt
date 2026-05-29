@@ -1,10 +1,10 @@
-package agentdock.history
+package opencodedock.history
 
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import agentdock.acp.AcpAdapterPaths
-import agentdock.utils.atomicWriteText
+import opencodedock.acp.AcpAdapterPaths
+import opencodedock.utils.atomicWriteText
 import java.io.File
 
 internal object HistoryStorage {

@@ -1,7 +1,7 @@
-package agentdock.changes
+package opencodedock.changes
 
 import com.intellij.openapi.project.Project
-import agentdock.utils.LocalFilePathPolicy
+import opencodedock.utils.LocalFilePathPolicy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -1,4 +1,4 @@
-package agentdock.utils
+package opencodedock.utils
 
 /**
  * Escapes a string for safe injection into JavaScript code within single quotes.

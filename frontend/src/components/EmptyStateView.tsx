@@ -8,16 +8,13 @@ import { LoadingSpinner } from './ui/LoadingSpinner';
 import ConfirmationModal from './ConfirmationModal';
 import { Tooltip } from './chat/shared/Tooltip';
 
-const HISTORY_POLL_INTERVAL_MS = 5000;
-
 interface EmptyStateViewProps {
   availableAgents: AgentOption[];
   runnableAgents: AgentOption[];
   adaptersResolved: boolean;
-  onStartWithAgent: (agentId: string) => void;
+  onStartChat: () => void;
   onOpenRecentConversation: (session: HistorySessionMeta) => void;
   onOpenHistory: () => void;
-  onOpenManagement: () => void;
 }
 
 function AgentIcon({ agent, size = 'md' }: { agent?: AgentOption; size?: 'md' | 'lg' }) {
@@ -84,10 +81,9 @@ export function EmptyStateView({
   availableAgents,
   runnableAgents,
   adaptersResolved,
-  onStartWithAgent,
+  onStartChat,
   onOpenRecentConversation,
   onOpenHistory,
-  onOpenManagement,
 }: EmptyStateViewProps) {
   const [historyList, setHistoryList] = useState<HistorySessionMeta[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -149,10 +145,8 @@ export function EmptyStateView({
     };
 
     requestHistory();
-    const intervalId = window.setInterval(requestHistory, HISTORY_POLL_INTERVAL_MS);
 
     return () => {
-      window.clearInterval(intervalId);
       unsubscribeDelete();
       unsubscribeHistory();
     };
@@ -239,33 +233,21 @@ export function EmptyStateView({
               <div className="flex flex-col items-center text-center">
                 {runnableAgents.length > 0 ? (
                   <>
-                    <div className="text-ide-medium mb-8">Select an AI agent to start a new chat</div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-3">
-                      {runnableAgents.map((agent) => (
-                        <Tooltip key={agent.id} content={agent.name} variant="minimal">
-                          <button
-                            type="button"
-                            onClick={() => onStartWithAgent(agent.id)}
-                            className="flex h-14 w-14 items-center justify-center opacity-80 rounded-xl border
-                              border-[var(--ide-Button-startBorderColor)] bg-background transition-all duration-150
-                              hover:bg-hover focus:outline-none focus:shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]"
-                          >
-                            <AgentIcon agent={agent} size="lg" />
-                          </button>
-                        </Tooltip>
-                      ))}
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--ide-Button-startBorderColor)] bg-background opacity-80">
+                      <AgentIcon agent={runnableAgents[0]} size="lg" />
+                    </div>
+                    <div className="text-ide-medium mb-3">Start a new OpenCode chat</div>
+                    <p className="max-w-[360px] text-foreground-secondary">
+                      OpenCode is installed and ready. Start a chat, then choose a model and mode in the composer.
+                    </p>
+                    <div className="mt-6">
+                      <Button onClick={onStartChat}>New Chat</Button>
                     </div>
                   </>
                 ) : adaptersResolved ? (
-                  <>
-                    <p className="mt-8 max-w-[300px] text-foreground-secondary">
-                      Install at least one AI agent from Service Providers to start a new chat.
-                    </p>
-                    <div className="mt-6">
-                      <Button onClick={onOpenManagement} variant="secondary">Service Providers</Button>
-                    </div>
-                  </>
+                  <p className="mt-8 max-w-[320px] text-foreground-secondary">
+                    OpenCode was not found. Install it system-wide so it is available on your PATH, then reopen this panel.
+                  </p>
                 ) : (
                   <div className="h-[92px]" />
                 )}

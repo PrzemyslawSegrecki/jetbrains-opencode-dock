@@ -1,4 +1,4 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.Dispatchers

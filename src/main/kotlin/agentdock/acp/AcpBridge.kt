@@ -1,11 +1,11 @@
-package agentdock.acp
+package opencodedock.acp
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import agentdock.utils.escapeForJsString
+import opencodedock.utils.escapeForJsString
 import java.util.concurrent.ConcurrentHashMap
 
 

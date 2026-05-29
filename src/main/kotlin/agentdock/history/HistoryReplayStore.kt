@@ -1,11 +1,11 @@
-package agentdock.history
+package opencodedock.history
 
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import agentdock.utils.atomicWriteText
+import opencodedock.utils.atomicWriteText
 import java.io.File
 import java.nio.file.Files
 

@@ -1,4 +1,4 @@
-package agentdock.gitcommit
+package opencodedock.gitcommit
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -12,7 +12,7 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.NotNull
-import agentdock.acp.AcpClientService
+import opencodedock.acp.AcpClientService
 
 class GenerateGitCommitMessageAction : AnAction(), DumbAware {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

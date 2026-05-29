@@ -1,4 +1,4 @@
-package agentdock.history
+package opencodedock.history
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject

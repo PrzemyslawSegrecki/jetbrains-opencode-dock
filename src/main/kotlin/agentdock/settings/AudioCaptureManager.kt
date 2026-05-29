@@ -1,4 +1,4 @@
-package agentdock.settings
+package opencodedock.settings
 
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean

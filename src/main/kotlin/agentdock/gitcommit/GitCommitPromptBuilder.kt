@@ -1,4 +1,4 @@
-package agentdock.gitcommit
+package opencodedock.gitcommit
 
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.VcsException

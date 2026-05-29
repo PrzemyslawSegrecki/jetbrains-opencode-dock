@@ -14,6 +14,42 @@ export type ModelPickerGroup = {
   options: ModelPickerOption[];
 };
 
+export function getModelProviderGroupLabel(modelId: string | undefined): string {
+  const normalized = modelId?.trim();
+  if (!normalized) return 'Other';
+
+  const slashIndex = normalized.indexOf('/');
+  if (slashIndex <= 0) return 'Other';
+
+  const provider = normalized.slice(0, slashIndex).trim();
+  return provider || 'Other';
+}
+
+function buildGroupedModelOptions(
+  agentId: string,
+  options: ModelPickerOption[],
+  iconPath?: string,
+): ModelPickerGroup[] {
+  const groups = new Map<string, ModelPickerOption[]>();
+
+  options.forEach((option) => {
+    const groupLabel = getModelProviderGroupLabel(option.modelId);
+    const existing = groups.get(groupLabel);
+    if (existing) {
+      existing.push(option);
+      return;
+    }
+    groups.set(groupLabel, [option]);
+  });
+
+  return Array.from(groups.entries()).map(([label, groupedOptions]) => ({
+    agentId,
+    label,
+    iconPath,
+    options: groupedOptions,
+  }));
+}
+
 export type PinnedAgentSnapshot = {
   id: string;
   name?: string;
@@ -106,17 +142,16 @@ export function buildModelPickerGroups(
   pinnedSnapshot: PinnedAgentSnapshot | null,
   pinnedAgentId: string
 ): ModelPickerGroup[] {
-  const groups = availableAgents.map((agent) => ({
-    agentId: agent.id,
-    label: agent.name,
-    iconPath: agent.iconPath,
-    options: getVisibleModels(agent).map((model) => ({
+  const groups = availableAgents.flatMap((agent) => buildGroupedModelOptions(
+    agent.id,
+    getVisibleModels(agent).map((model) => ({
       agentId: agent.id,
       modelId: model.modelId,
       label: model.name,
       description: model.description,
     })),
-  })).filter((group) => group.options.length > 0);
+    agent.iconPath,
+  )).filter((group) => group.options.length > 0);
 
   if (
     pinnedSnapshot &&
@@ -132,16 +167,11 @@ export function buildModelPickerGroups(
     }));
 
     if (pinnedOptions.length > 0) {
-      groups.unshift({
-        agentId: pinnedSnapshot.id,
-        label: pinnedSnapshot.name || pinnedSnapshot.id,
-        iconPath: pinnedSnapshot.iconPath,
-        options: pinnedOptions,
-      });
+      groups.unshift(...buildGroupedModelOptions(pinnedSnapshot.id, pinnedOptions, pinnedSnapshot.iconPath));
     } else if (pinnedSnapshot.currentModelId) {
       groups.unshift({
         agentId: pinnedSnapshot.id,
-        label: pinnedSnapshot.name || pinnedSnapshot.id,
+        label: getModelProviderGroupLabel(pinnedSnapshot.currentModelId),
         iconPath: pinnedSnapshot.iconPath,
         options: [{
           agentId: pinnedSnapshot.id,

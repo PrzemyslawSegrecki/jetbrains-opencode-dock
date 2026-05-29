@@ -40,7 +40,7 @@ export function useAvailableAgents() {
       setAdaptersResolved(true);
       if (safeAdapters.length > 0) {
         try {
-          localStorage.setItem('agent-dock.adapters', JSON.stringify(safeAdapters));
+          localStorage.setItem('opencode-dock.adapters', JSON.stringify(safeAdapters));
         } catch (e) {
           console.warn('[App] Failed to cache adapters:', e);
         }

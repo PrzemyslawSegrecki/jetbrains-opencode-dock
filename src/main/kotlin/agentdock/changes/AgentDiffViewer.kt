@@ -1,4 +1,4 @@
-package agentdock.changes
+package opencodedock.changes
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager

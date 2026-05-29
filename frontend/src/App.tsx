@@ -69,7 +69,6 @@ function App() {
     handleCanMarkReadChange,
     handlePermissionRequestChange,
     handleProcessingChange,
-    requestAgentSwitch,
     handleHandoffConsumed,
     handleForkRequest,
     handleChatSessionStateChange,
@@ -89,10 +88,8 @@ function App() {
         onCloseTab={handleCloseTab}
         onCloseAllTabs={handleCloseAllTabs}
         onNewTab={() => handleNewTab()}
-        onNewTabWithAgent={(agentId) => handleNewTab(agentId)}
         agents={availableAgents}
         onOpenHistory={() => openSingletonTab('history', 'History')}
-        onOpenManagement={() => openSingletonTab('management', 'Service Providers')}
         onOpenDesignSystem={() => openSingletonTab('design', 'Design System')}
         onOpenMcp={() => openSingletonTab('mcp', 'MCP Servers')}
         onOpenPromptLibrary={() => openSingletonTab('prompt-library', 'Prompt Library')}
@@ -120,7 +117,6 @@ function App() {
               onCanMarkReadChange={(canMarkRead) => handleCanMarkReadChange(tab.id, canMarkRead)}
               onPermissionRequestChange={(hasPendingPermission) => handlePermissionRequestChange(tab.id, hasPendingPermission)}
               onProcessingChange={(isProcessing) => handleProcessingChange(tab.id, isProcessing)}
-              onAgentChangeRequest={(payload) => requestAgentSwitch(tab.id, payload)}
               onForkRequest={(payload) => handleForkRequest(tab.id, payload)}
               onHandoffConsumed={(handoffId) => handleHandoffConsumed(tab.id, handoffId)}
               onSessionStateChange={(state) => handleChatSessionStateChange(tab.id, state)}
@@ -134,10 +130,9 @@ function App() {
             availableAgents={availableAgents}
             runnableAgents={runnableAgents}
             adaptersResolved={agentAvailabilityResolved}
-            onStartWithAgent={handleNewTab}
+            onStartChat={() => handleNewTab()}
             onOpenRecentConversation={handleOpenHistory}
             onOpenHistory={() => openSingletonTab('history', 'History')}
-            onOpenManagement={() => openSingletonTab('management', 'Service Providers')}
           />
         )}
       </div>
