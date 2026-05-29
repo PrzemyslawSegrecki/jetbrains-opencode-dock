@@ -556,27 +556,6 @@ internal fun AcpBridge.installAdapterQueries() {
         }
     }
 
-    fetchUsageQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
-        addHandler { payload ->
-            val adapterId = parseIdOnlyPayload(payload) ?: payload?.trim() ?: ""
-            scope.launch(Dispatchers.IO) {
-                val result = ""
-                if (result.isNotBlank()) {
-                    AcpQuotaService.getInstance().updateQuotaForAdapter(adapterId, result)
-                }
-                val escapedAdapterId = jsStringLiteral(adapterId)
-                val escapedResult = jsStringLiteral(result)
-                runOnEdt {
-                    browser.cefBrowser.executeJavaScript(
-                        "if(window.__onUsageData) window.__onUsageData($escapedAdapterId, $escapedResult);",
-                        browser.cefBrowser.url, 0
-                    )
-                }
-            }
-            JBCefJSQuery.Response(null)
-        }
-    }
-
     openAgentCliQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
         addHandler { payload ->
             val adapterId = parseIdOnlyPayload(payload)

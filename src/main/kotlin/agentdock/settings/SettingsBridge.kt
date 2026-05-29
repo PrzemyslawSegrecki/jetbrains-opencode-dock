@@ -11,11 +11,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.cef.browser.CefBrowser
-import opencodedock.acp.AcpQuotaService
-import opencodedock.ui.OpenCodeDockQuotaWidgetFactory
 import opencodedock.utils.escapeForJsString
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.wm.impl.status.widget.StatusBarWidgetsManager
 
 class SettingsBridge(
     private val browser: JBCefBrowser,
@@ -209,8 +205,6 @@ class SettingsBridge(
                             }.getOrDefault(GlobalSettings())
                             val saved = GlobalSettingsStore.save(requested)
                             pushGlobalSettings(GlobalSettingsPayload(settings = saved))
-                            AcpQuotaService.getInstance().onQuotaWidgetEnabledChanged(saved.quotaWidgetEnabled)
-                            refreshQuotaWidget()
                         }
                     }
                 }
@@ -320,17 +314,6 @@ class SettingsBridge(
                 browser.cefBrowser.url,
                 0
             )
-        }
-    }
-
-    private fun refreshQuotaWidget() {
-        ApplicationManager.getApplication().invokeLater {
-            ProjectManager.getInstance().openProjects.forEach { project ->
-                if (!project.isDisposed) {
-                    project.getService(StatusBarWidgetsManager::class.java)
-                        ?.updateWidget(OpenCodeDockQuotaWidgetFactory::class.java)
-                }
-            }
         }
     }
 

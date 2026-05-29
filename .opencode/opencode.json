@@ -1,0 +1,45 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "command": {
+    "refactor-opencode": {
+      "description": "Execute the full OpenCode Dock refactor plan across all 6 phases",
+      "template": "Execute the complete OpenCode Dock refactor plan defined in docs/opencode-dock-refactor-plan.md. Proceed strictly phase by phase: 1) Identity, 2) Namespace, 3) Adapters, 4) Frontend, 5) Model Grouping, 6) Docs/Tests. Load the 'opencode-dock-refactor' skill for detailed instructions. Ask for confirmation before starting each phase unless the user explicitly told you to proceed without stopping. Verify after each phase using git diff and relevant build commands."
+    },
+    "refactor-phase": {
+      "description": "Run a single phase of the OpenCode Dock refactor (usage: /refactor-phase <1-6>)",
+      "template": "Run the specified phase of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md. Load the 'opencode-dock-refactor' skill for detailed instructions. Ask for confirmation before making changes. Verify with git diff after the phase."
+    }
+  },
+  "agent": {
+    "opencode-identity": {
+      "description": "Phase 1: Rename plugin metadata (plugin.xml, gradle.properties, icons, IDs)",
+      "mode": "subagent",
+      "prompt": "You are a JetBrains plugin refactor specialist. Execute Phase 1 of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md: rename plugin ID to 'opencodedock', name to 'OpenCode Dock', vendor to 'Przemyslaw Segrecki', update tool window ID, action IDs, widget IDs, and plugin icons. Modify plugin.xml, gradle.properties, and icon paths. Load the 'opencode-dock-refactor' skill. Use 'refactor-plan' and 'clean-code' skills. Verify with git grep that old 'AgentDock'/'Agent Dock'/'agentdock' references remain only in code packages before finishing."
+    },
+    "opencode-namespace": {
+      "description": "Phase 2: Rename Kotlin package namespace and runtime paths",
+      "mode": "subagent",
+      "prompt": "You are a Kotlin/JVM refactor specialist. Execute Phase 2 of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md: move package namespace from 'agentdock' to 'opencodedock', rename key classes (ToolWindowFactory, QuotaWidget, HistoryService), update BuildConfig path in build.gradle.kts, change runtime dir to '~/.opencode-dock', update system property and frontend localStorage keys. Load the 'opencode-dock-refactor' skill. Use 'refactor-plan' and 'clean-code' skills. Verify that old and new versions don't share any IDs, paths, or storage keys."
+    },
+    "opencode-adapters": {
+      "description": "Phase 3: Clean up ACP adapters to OpenCode-only",
+      "mode": "subagent",
+      "prompt": "You are a protocol integration specialist. Execute Phase 3 of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md: keep only opencode.json in acp-adapters/index.json, remove all other provider adapter files (Claude, Codex, Cursor, Gemini, Copilot, Kilo, Qoder), remove backend code paths for deleted providers (provider-specific history, usage fetchers). Keep ACP dependency. Load the 'opencode-dock-refactor' skill. Verify that pushAdapters() returns only 'opencode'."
+    },
+    "opencode-frontend": {
+      "description": "Phase 4: Simplify frontend to OpenCode-only UX",
+      "mode": "subagent",
+      "prompt": "You are a React/TypeScript UI refactor specialist. Execute Phase 4 of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md: rename UI labels from 'Service Provider'/'Agent' to OpenCode-specific wording, simplify AgentManagement to show only OpenCode status, remove usage components for deleted providers (ClaudeUsage, CodexUsage, GeminiUsage, CopilotUsage, CursorUsage, QoderUsage), remove provider switching from new-chat UX. Load the 'opencode-dock-refactor' and 'typescript-refactor' skills. Verify no visible multi-provider management UX remains."
+    },
+    "opencode-models": {
+      "description": "Phase 5: Group models by OpenCode model provider prefix",
+      "mode": "subagent",
+      "prompt": "You are a TypeScript/React data transformation specialist. Execute Phase 5 of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md: implement model grouping in GroupedModelDropdown and agentSelection hooks using provider prefix from model ID (e.g., 'openai', 'anthropic', 'google' from 'openai/gpt-5'), add fallback group 'Other' for IDs without prefix, apply same grouping in Visible Models settings, preserve hidden model preferences under single 'opencode' adapter. Load the 'opencode-dock-refactor' and 'typescript-refactor' skills. Verify dropdown shows one OpenCode runtime with grouped providers."
+    },
+    "opencode-docs": {
+      "description": "Phase 6: Update docs, tests, and metadata",
+      "mode": "subagent",
+      "prompt": "You are a documentation and QA specialist. Execute Phase 6 of the OpenCode Dock refactor plan from docs/opencode-dock-refactor-plan.md: rewrite README.md for OpenCode Dock, update frontend package metadata and index.html title, remove unused icons/screenshots if unreferenced, update tests for new package and '.opencode-dock' storage path, run './gradlew.bat test' and './gradlew.bat buildPlugin'. If feasible, run sandbox with './gradlew.bat runIde'. Load the 'opencode-dock-refactor' and 'docs' skills."
+    }
+  }
+}

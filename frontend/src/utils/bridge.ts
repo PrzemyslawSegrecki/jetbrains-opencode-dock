@@ -222,10 +222,6 @@ export const ACPBridge = {
       window.dispatchEvent(new CustomEvent(EVENT_NAMES.AVAILABLE_COMMANDS, { detail: { adapterId, commands } }));
     };
 
-    window.__onUsageData = (adapterId, json) => {
-      window.dispatchEvent(new CustomEvent(EVENT_NAMES.USAGE_DATA, { detail: { adapterId, json } }));
-    };
-
     window.__onPermissionRequest = (request) => {
       window.dispatchEvent(new CustomEvent(EVENT_NAMES.PERMISSION, { detail: { request } }));
     };
@@ -408,12 +404,6 @@ export const ACPBridge = {
       window.__recoverRuntime?.(reason, requestId);
     });
   },
-
-  fetchAdapterUsage: (adapterId: string) => {
-    window.__fetchAdapterUsage?.(adapterId);
-  },
-
-  onUsageData: (callback: (e: CustomEvent<{ adapterId: string; json: string }>) => void) => onBridgeEvent(EVENT_NAMES.USAGE_DATA, callback),
 
   onLog: (callback: (e: CustomEvent) => void) => onBridgeEvent(EVENT_NAMES.LOG, callback),
 

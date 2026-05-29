@@ -117,6 +117,11 @@ object IdeTheme {
         sb.append("  --ide-shimmer-highlight-color: ${toCssColor(shimmerHighlightColor)};\n")
         val blueUserMessageBackground = if (isDark) Color(0x25, 0x32, 0x4d) else Color(225, 235, 253, 220)
         val defaultUserMessageBackground = if (isDark) Color(100, 100, 100, 65) else Color(100, 100, 100, 18)
+        val greenUserMessageBackground = if (isDark) Color(0x1a, 0x33, 0x28) else Color(220, 245, 228, 220)
+        val purpleUserMessageBackground = if (isDark) Color(0x30, 0x24, 0x48) else Color(235, 220, 250, 220)
+        val orangeUserMessageBackground = if (isDark) Color(0x3d, 0x2e, 0x1a) else Color(255, 240, 215, 220)
+        val tealUserMessageBackground = if (isDark) Color(0x1a, 0x33, 0x38) else Color(215, 245, 245, 220)
+        val roseUserMessageBackground = if (isDark) Color(0x3d, 0x24, 0x2a) else Color(250, 220, 228, 220)
 
         // Secondary: use editor background if different from panel, otherwise calculate
         val secondaryBackground = if (areColorsSimilar(baseBackground, editorBackground)) {
@@ -129,6 +134,11 @@ object IdeTheme {
         sb.append("  --ide-background-secondary: ${toCssColor(secondaryBackground)};\n")
         sb.append("  --ide-user-message-default-bg: ${toCssColor(defaultUserMessageBackground)};\n")
         sb.append("  --ide-user-message-blue-bg: ${toCssColor(blueUserMessageBackground)};\n")
+        sb.append("  --ide-user-message-green-bg: ${toCssColor(greenUserMessageBackground)};\n")
+        sb.append("  --ide-user-message-purple-bg: ${toCssColor(purpleUserMessageBackground)};\n")
+        sb.append("  --ide-user-message-orange-bg: ${toCssColor(orangeUserMessageBackground)};\n")
+        sb.append("  --ide-user-message-teal-bg: ${toCssColor(tealUserMessageBackground)};\n")
+        sb.append("  --ide-user-message-rose-bg: ${toCssColor(roseUserMessageBackground)};\n")
         sb.append("  --ide-surface-hover-filter: ${if (isDark) "brightness(1.2)" else "brightness(0.96)"};\n")
         sb.append("  --ide-surface-active-filter: ${if (isDark) "brightness(1.2)" else "brightness(0.96)"};\n")
 
@@ -174,17 +184,30 @@ object IdeTheme {
         sb.append("  --ide-scrollbar-color: ${toCssColor(scrollbarColor)};\n")
 
         val userMessageStyle = GlobalSettingsStore.userMessageBackgroundStyle()
-        val userMessageBackgroundVar = when (userMessageStyle) {
-            "default" -> "--ide-user-message-default-bg"
-            "blue" -> "--ide-user-message-blue-bg"
-            "background-secondary" -> "--ide-background-secondary"
-            "primary" -> "--ide-Button-default-startBackground"
-            "secondary" -> "--ide-Button-startBackground"
-            "input" -> "--ide-TextField-background"
-            "editor-bg" -> "--ide-editor-bg"
-            else -> "--ide-List-selectionBackground"
+        val userMessageBackgroundVar = when {
+            userMessageStyle.startsWith("custom:") -> null
+            else -> when (userMessageStyle) {
+                "default" -> "--ide-user-message-default-bg"
+                "blue" -> "--ide-user-message-blue-bg"
+                "green" -> "--ide-user-message-green-bg"
+                "purple" -> "--ide-user-message-purple-bg"
+                "orange" -> "--ide-user-message-orange-bg"
+                "teal" -> "--ide-user-message-teal-bg"
+                "rose" -> "--ide-user-message-rose-bg"
+                "background-secondary" -> "--ide-background-secondary"
+                "primary" -> "--ide-Button-default-startBackground"
+                "secondary" -> "--ide-Button-startBackground"
+                "input" -> "--ide-TextField-background"
+                "editor-bg" -> "--ide-editor-bg"
+                else -> "--ide-List-selectionBackground"
+            }
         }
-        sb.append("  --user-message-bg: var($userMessageBackgroundVar);\n")
+        if (userMessageBackgroundVar != null) {
+            sb.append("  --user-message-bg: var($userMessageBackgroundVar);\n")
+        } else {
+            val customHex = userMessageStyle.removePrefix("custom:")
+            sb.append("  --user-message-bg: $customHex;\n")
+        }
 
         // 8. Layout and spacing
         val listIndent = UIManager.getInt("Tree.leftChildIndent").takeIf { it > 0 }

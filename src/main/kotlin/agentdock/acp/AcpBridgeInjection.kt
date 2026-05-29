@@ -29,7 +29,6 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val setHiddenModelsInject = setHiddenModelsQuery?.inject("JSON.stringify(payload)") ?: ""
     val loginAgentInject = loginAgentQuery?.inject("adapterId") ?: ""
     val logoutAgentInject = logoutAgentQuery?.inject("adapterId") ?: ""
-    val fetchUsageInject = fetchUsageQuery?.inject("adapterId") ?: ""
     val openAgentCliInject = openAgentCliQuery?.inject("adapterId") ?: ""
     val openHistoryConversationCliInject = openHistoryConversationCliQuery?.inject("JSON.stringify(payload)") ?: ""
     val searchFilesInject = searchFilesQuery?.inject("query") ?: ""
@@ -109,9 +108,6 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
             };
             window.__logoutAgent = function(adapterId) {
                 try { $logoutAgentInject } catch (e) { }
-            };
-            window.__fetchAdapterUsage = function(adapterId) {
-                try { $fetchUsageInject } catch (e) { }
             };
             window.__openAgentCli = function(adapterId) {
                 try { $openAgentCliInject } catch (e) { }
@@ -215,7 +211,6 @@ internal fun AcpBridge.injectReadySignal(cefBrowser: CefBrowser) {
         window.__toggleAgentEnabled = window.__toggleAgentEnabled || function(payload) {};
         window.__loginAgent = window.__loginAgent || function(id) {};
         window.__logoutAgent = window.__logoutAgent || function(id) {};
-        window.__fetchAdapterUsage = window.__fetchAdapterUsage || function(id) {};
         window.__openAgentCli = window.__openAgentCli || function(id) {};
         window.__openHistoryConversationCli = window.__openHistoryConversationCli || function(payload) {};
         window.__searchFiles = window.__searchFiles || function(query) {};

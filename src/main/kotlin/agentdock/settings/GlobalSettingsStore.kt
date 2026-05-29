@@ -81,8 +81,15 @@ object GlobalSettingsStore {
     }
 
     private fun normalizeUserMessageBackgroundStyle(style: String?): String {
-        return when (style?.trim()?.lowercase()) {
-            "default", "blue", "background-secondary", "primary", "secondary", "accent", "input", "editor-bg" -> style.trim().lowercase()
+        val trimmed = style?.trim()?.lowercase() ?: return "default"
+        if (trimmed.startsWith("custom:")) {
+            val hex = trimmed.removePrefix("custom:")
+            if (hex.matches(Regex("^#[0-9a-f]{6}$"))) return "custom:$hex"
+            return "default"
+        }
+        return when (trimmed) {
+            "default", "blue", "green", "purple", "orange", "teal", "rose",
+            "background-secondary", "primary", "secondary", "accent", "input", "editor-bg" -> trimmed
             else -> "default"
         }
     }

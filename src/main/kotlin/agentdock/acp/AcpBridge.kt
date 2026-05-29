@@ -38,7 +38,6 @@ class AcpBridge(
     internal var setHiddenModelsQuery: JBCefJSQuery? = null
     internal var loginAgentQuery: JBCefJSQuery? = null
     internal var logoutAgentQuery: JBCefJSQuery? = null
-    internal var fetchUsageQuery: JBCefJSQuery? = null
     internal var undoFileQuery: JBCefJSQuery? = null
     internal var undoAllFilesQuery: JBCefJSQuery? = null
     internal var processFileQuery: JBCefJSQuery? = null

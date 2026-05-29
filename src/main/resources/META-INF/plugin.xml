@@ -43,11 +43,8 @@
 
      <depends>com.intellij.modules.platform</depends>
      <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="opencodedock.acp.AcpQuotaService"/>
-        <postStartupActivity implementation="opencodedock.acp.AcpStartupActivity"/>
-         <toolWindow id="OpenCode Dock" icon="/icons/opencode.svg" anchor="right"
+<toolWindow id="OpenCode Dock" icon="/icons/opencode.svg" anchor="right"
                      factoryClass="opencodedock.OpenCodeDockToolWindowFactory"/>
-         <statusBarWidgetFactory id="OpenCodeDockQuotaWidget" implementation="opencodedock.ui.OpenCodeDockQuotaWidgetFactory"/>
      </extensions>
 
     <actions>

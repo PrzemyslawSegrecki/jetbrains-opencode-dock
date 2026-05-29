@@ -449,10 +449,9 @@ export interface GitCommitGenerationSettings {
 export interface GlobalSettings {
   audioNotificationsEnabled: boolean;
   uiFontSizeOffsetPx: number;
-  userMessageBackgroundStyle: 'default' | 'blue' | 'background-secondary' | 'primary' | 'secondary' | 'accent' | 'input' | 'editor-bg';
+  userMessageBackgroundStyle: string;
   audioTranscription: AudioTranscriptionSettings;
   gitCommitGeneration: GitCommitGenerationSettings;
-  quotaWidgetEnabled: boolean;
 }
 
 export interface GlobalSettingsPayload {
@@ -485,7 +484,6 @@ declare global {
     __recoverRuntime?: (reason?: string, requestId?: string) => void;
     __loginAgent?: (adapterId: string) => void;
     __logoutAgent?: (adapterId: string) => void;
-    __fetchAdapterUsage?: (adapterId: string) => void;
     __openAgentCli?: (adapterId: string) => void;
     __openHistoryConversationCli?: (payload: { projectPath: string; conversationId: string }) => void;
     __undoFile?: (payload: string) => void;
@@ -522,7 +520,6 @@ declare global {
     __onAttachmentsAdded?: (chatId: string, files: ChatAttachment[]) => void;
     __onConversationTranscriptSaved?: (payload: ConversationTranscriptSavedPayload) => void;
     __onBridgeOperationResult?: (payload: BridgeOperationResultPayload) => void;
-    __onUsageData?: (adapterId: string, json: string) => void;
 
     __onUndoResult?: (chatId: string, result: UndoResultPayload) => void;
     __onChangesState?: (chatId: string, state: ChangesState) => void;

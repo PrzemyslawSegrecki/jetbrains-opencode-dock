@@ -59,7 +59,6 @@ export const EVENT_NAMES = {
   MODE: 'acp-mode',
   ADAPTERS: 'acp-adapters',
   AVAILABLE_COMMANDS: 'acp-available-commands',
-  USAGE_DATA: 'acp-usage-data',
   PERMISSION: 'acp-permission',
   LOG: 'acp-log',
   HISTORY_LIST: 'history-list',

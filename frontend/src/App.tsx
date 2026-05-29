@@ -11,6 +11,11 @@ function App() {
     const userMessageBgMap: Record<string, string> = {
       'default': 'var(--ide-user-message-default-bg)',
       'blue': 'var(--ide-user-message-blue-bg)',
+      'green': 'var(--ide-user-message-green-bg)',
+      'purple': 'var(--ide-user-message-purple-bg)',
+      'orange': 'var(--ide-user-message-orange-bg)',
+      'teal': 'var(--ide-user-message-teal-bg)',
+      'rose': 'var(--ide-user-message-rose-bg)',
       'background-secondary': 'var(--ide-background-secondary)',
       'primary': 'var(--ide-Button-default-startBackground)',
       'secondary': 'var(--ide-Button-startBackground)',
@@ -24,7 +29,12 @@ function App() {
       document.documentElement.style.setProperty('--ui-font-size-offset', `${offset}px`);
 
       const styleId = payload?.settings?.userMessageBackgroundStyle ?? 'default';
-      const bg = userMessageBgMap[styleId] ?? userMessageBgMap['default'];
+      let bg: string;
+      if (styleId.startsWith('custom:')) {
+        bg = styleId.slice('custom:'.length);
+      } else {
+        bg = userMessageBgMap[styleId] ?? userMessageBgMap['default'];
+      }
       document.documentElement.style.setProperty('--user-message-bg', bg);
     };
 

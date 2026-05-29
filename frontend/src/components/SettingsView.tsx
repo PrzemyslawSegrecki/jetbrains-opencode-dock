@@ -17,7 +17,6 @@ const defaultGlobalSettings: GlobalSettingsPayload = {
     userMessageBackgroundStyle: 'default',
     audioTranscription: { language: 'auto' },
     gitCommitGeneration: { enabled: false, adapterId: '', modelId: '', instructions: '' },
-    quotaWidgetEnabled: false,
   },
 };
 
@@ -42,12 +41,16 @@ function normalizeGlobalSettings(payload: Partial<GlobalSettingsPayload> | undef
     settings: {
       audioNotificationsEnabled: payload?.settings?.audioNotificationsEnabled ?? true,
       uiFontSizeOffsetPx,
-      userMessageBackgroundStyle: userMessageBackgroundOptions.some((option) => option.id === payload?.settings?.userMessageBackgroundStyle)
-        ? payload!.settings!.userMessageBackgroundStyle
-        : 'default',
+      userMessageBackgroundStyle: (() => {
+        const raw = payload?.settings?.userMessageBackgroundStyle;
+        if (typeof raw === 'string' && raw.startsWith('custom:')) {
+          const hex = raw.slice('custom:'.length);
+          return /^#[0-9a-fA-F]{6}$/.test(hex) ? raw : 'default';
+        }
+        return userMessageBackgroundOptions.some((option) => option.id === raw) ? raw! : 'default';
+      })(),
       audioTranscription: payload?.settings?.audioTranscription ?? { language: 'auto' },
       gitCommitGeneration: normalizeGitCommitGenerationSettings(payload?.settings?.gitCommitGeneration),
-      quotaWidgetEnabled: payload?.settings?.quotaWidgetEnabled ?? false,
     },
   };
 }
@@ -62,12 +65,17 @@ function readIdeFontSizePx(): number {
 }
 
 const userMessageBackgroundOptions: Array<{
-  id: GlobalSettingsPayload['settings']['userMessageBackgroundStyle'];
+  id: string;
   background: string;
   toneClass: string;
 }> = [
   { id: 'default', background: 'var(--ide-user-message-default-bg)', toneClass: 'bg-[var(--ide-user-message-default-bg)]' },
   { id: 'blue', background: 'var(--ide-user-message-blue-bg)', toneClass: 'bg-[var(--ide-user-message-blue-bg)]' },
+  { id: 'green', background: 'var(--ide-user-message-green-bg)', toneClass: 'bg-[var(--ide-user-message-green-bg)]' },
+  { id: 'purple', background: 'var(--ide-user-message-purple-bg)', toneClass: 'bg-[var(--ide-user-message-purple-bg)]' },
+  { id: 'orange', background: 'var(--ide-user-message-orange-bg)', toneClass: 'bg-[var(--ide-user-message-orange-bg)]' },
+  { id: 'teal', background: 'var(--ide-user-message-teal-bg)', toneClass: 'bg-[var(--ide-user-message-teal-bg)]' },
+  { id: 'rose', background: 'var(--ide-user-message-rose-bg)', toneClass: 'bg-[var(--ide-user-message-rose-bg)]' },
   { id: 'background-secondary', background: 'var(--ide-background-secondary)', toneClass: 'bg-background-secondary' },
   { id: 'primary', background: 'var(--ide-Button-default-startBackground)', toneClass: 'bg-primary' },
   { id: 'secondary', background: 'var(--ide-Button-startBackground)', toneClass: 'bg-secondary' },
@@ -97,6 +105,11 @@ const whisperLanguageOptions: DropdownOption[] = [
 ];
 
 function applyUserMessageTheme(styleId: GlobalSettingsPayload['settings']['userMessageBackgroundStyle']) {
+  if (styleId.startsWith('custom:')) {
+    const hex = styleId.slice('custom:'.length);
+    document.documentElement.style.setProperty('--user-message-bg', hex);
+    return;
+  }
   const selected = userMessageBackgroundOptions.find((option) => option.id === styleId) ?? userMessageBackgroundOptions[0];
   document.documentElement.style.setProperty('--user-message-bg', selected.background);
 }
@@ -276,11 +289,7 @@ export function SettingsView() {
     ACPBridge.saveGlobalSettings(next);
   };
 
-  const handleQuotaWidgetEnabledChange = (quotaWidgetEnabled: boolean) => {
-    const next = { ...globalSettings.settings, quotaWidgetEnabled };
-    setGlobalSettings(prev => ({ ...prev, settings: next }));
-    ACPBridge.saveGlobalSettings(next);
-  };
+  
 
   const handleUiFontSizeChange = (uiFontSizeOffsetPx: number) => {
     const next = { ...globalSettings.settings, uiFontSizeOffsetPx };
@@ -351,7 +360,7 @@ export function SettingsView() {
             title="User Message Background"
             description="Choose the background color used for your chat messages:"
           >
-            <div className="mt-2 flex flex-wrap gap-1">
+            <div className="mt-2 flex flex-wrap items-center gap-1">
               {userMessageBackgroundOptions.map((option) => {
                 const selected = globalSettings.settings.userMessageBackgroundStyle === option.id;
                 return (
@@ -371,6 +380,42 @@ export function SettingsView() {
                   </button>
                 );
               })}
+              {(() => {
+                const isCustom = globalSettings.settings.userMessageBackgroundStyle.startsWith('custom:');
+                const customHex = isCustom ? globalSettings.settings.userMessageBackgroundStyle.slice('custom:'.length) : '#3b82f6';
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleUserMessageBackgroundStyleChange(`custom:${customHex}`)}
+                      aria-pressed={isCustom}
+                      className={`h-7 w-7 rounded-[4px] border border-[var(--ide-Button-disabledBorderColor)] focus:outline-none focus-visible:shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)] relative overflow-hidden ${
+                        isCustom
+                          ? 'shadow-[0_0_0_1px_var(--ide-Button-default-focusColor)]'
+                          : ''
+                      }`}
+                    >
+                      <span className="block h-full w-full rounded-[4px]" style={{ backgroundColor: customHex }} />
+                      <span className="sr-only">Custom color</span>
+                    </button>
+                    <label className="relative flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="color"
+                        value={customHex}
+                        onChange={(e) => {
+                          const next = `custom:${e.target.value}`;
+                          handleUserMessageBackgroundStyleChange(next);
+                        }}
+                        className="absolute inset-0 opacity-0 w-0 h-0"
+                        tabIndex={-1}
+                      />
+                      <span className="text-ide-small text-foreground-secondary border border-[var(--ide-Button-disabledBorderColor)] rounded-[4px] px-1.5 py-0.5 hover:bg-hover">
+                        {isCustom ? customHex : 'Pick'}
+                      </span>
+                    </label>
+                  </div>
+                );
+              })()}
             </div>
           </SettingsCardShell>
 
@@ -380,14 +425,6 @@ export function SettingsView() {
             enabled={globalSettings.settings.audioNotificationsEnabled}
             onToggle={() => handleAudioNotificationsChange(!globalSettings.settings.audioNotificationsEnabled)}
             ariaLabel="Enable audio notifications"
-          />
-
-          <SettingsToggleCard
-            title="Status Bar Quota Widget"
-            description="Display real-time agent usage quotas in the IDE status bar"
-            enabled={globalSettings.settings.quotaWidgetEnabled}
-            onToggle={() => handleQuotaWidgetEnabledChange(!globalSettings.settings.quotaWidgetEnabled)}
-            ariaLabel="Enable status bar quota widget"
           />
 
           <SettingsCardShell

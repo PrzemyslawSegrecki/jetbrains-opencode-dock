@@ -58,8 +58,7 @@ data class GlobalSettings(
     val uiFontSizeOffsetPx: Int = 0,
     val userMessageBackgroundStyle: String = "default",
     val audioTranscription: AudioTranscriptionSettings = AudioTranscriptionSettings(),
-    val gitCommitGeneration: GitCommitGenerationSettings = GitCommitGenerationSettings(),
-    val quotaWidgetEnabled: Boolean = false
+    val gitCommitGeneration: GitCommitGenerationSettings = GitCommitGenerationSettings()
 )
 
 @Serializable
