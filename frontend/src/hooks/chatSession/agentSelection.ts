@@ -58,6 +58,8 @@ export type PinnedAgentSnapshot = {
   availableModels?: AgentOption['availableModels'];
   currentModeId?: string;
   availableModes?: AgentOption['availableModes'];
+  currentVariant?: string;
+  availableVariants?: AgentOption['availableVariants'];
 };
 
 export function toPinnedAgentSnapshot(agent: AgentOption): PinnedAgentSnapshot {
@@ -69,6 +71,8 @@ export function toPinnedAgentSnapshot(agent: AgentOption): PinnedAgentSnapshot {
     availableModels: agent.availableModels,
     currentModeId: agent.currentModeId,
     availableModes: agent.availableModes,
+    currentVariant: agent.currentVariant,
+    availableVariants: agent.availableVariants,
   };
 }
 
@@ -87,6 +91,8 @@ export function resolveSelectedAgent(
     availableModels: pinnedSnapshot.availableModels,
     currentModeId: pinnedSnapshot.currentModeId,
     availableModes: pinnedSnapshot.availableModes,
+    currentVariant: pinnedSnapshot.currentVariant,
+    availableVariants: pinnedSnapshot.availableVariants,
   } as AgentOption;
 }
 

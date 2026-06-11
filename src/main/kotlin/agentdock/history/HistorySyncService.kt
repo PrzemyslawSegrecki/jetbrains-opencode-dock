@@ -4,8 +4,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import opencodedock.acp.AcpAdapterConfig
 import opencodedock.acp.AcpAdapterPaths
 import opencodedock.acp.AcpClientService
@@ -24,7 +28,7 @@ internal object HistorySyncService {
         }
     }
 
-    fun syncHistoryIndex(projectPath: String?): Boolean {
+    suspend fun syncHistoryIndex(projectPath: String?): Boolean {
         val cleanProjectPath = canonicalHistoryProjectPath(projectPath)
         if (cleanProjectPath.isBlank()) return false
         syncProjectIndex(cleanProjectPath)
@@ -36,7 +40,7 @@ internal object HistorySyncService {
         return buildHistoryList(cleanProjectPath, HistoryStorage.readExistingProjectIndex(cleanProjectPath))
     }
 
-    fun syncAndGetHistoryList(projectPath: String?): List<SessionMeta> {
+    suspend fun syncAndGetHistoryList(projectPath: String?): List<SessionMeta> {
         val cleanProjectPath = canonicalHistoryProjectPath(projectPath)
         return buildHistoryList(cleanProjectPath, syncProjectIndex(cleanProjectPath))
     }
@@ -71,7 +75,7 @@ internal object HistorySyncService {
         }
     }
 
-    private fun syncProjectIndex(projectPath: String): List<HistoryConversationIndexEntry> {
+    private suspend fun syncProjectIndex(projectPath: String): List<HistoryConversationIndexEntry> {
         if (projectPath.isBlank()) return emptyList()
 
         val indexFile = HistoryStorage.ensureProjectIndexFile(projectPath)
@@ -187,7 +191,7 @@ internal object HistorySyncService {
         return combinedConversations
     }
 
-    private fun collectSyncedAvailableSessionMeta(projectPath: String): AvailableSessionMetaResult {
+    private suspend fun collectSyncedAvailableSessionMeta(projectPath: String): AvailableSessionMetaResult {
         val result = mutableListOf<SessionMeta>()
         val scannedAdapters = linkedSetOf<String>()
         val ephemeralEntries = HistoryStorage.readEphemeralSessions(projectPath)
@@ -211,26 +215,40 @@ internal object HistorySyncService {
         return AvailableSessionMetaResult(visibleSessions, scannedAdapters)
     }
 
-    private fun collectSessionListMeta(projectPath: String): AvailableSessionMetaResult {
+    private suspend fun collectSessionListMeta(projectPath: String): AvailableSessionMetaResult {
         val project = findOpenProject(projectPath) ?: return AvailableSessionMetaResult(emptyList(), emptySet())
         val service = AcpClientService.getInstance(project)
         val adapters = AcpAdapterConfig.getAllAdapters().values
             .filter { it.supportsSessionList }
             .filter { AcpAdapterPaths.isDownloaded(it.id) }
 
-        return runBlocking {
-            val sessions = mutableListOf<SessionMeta>()
-            val scannedAdapters = linkedSetOf<String>()
-            adapters.forEach { adapterInfo ->
-                if (!service.isAdapterReady(adapterInfo.id)) return@forEach
-                runCatching {
-                    service.listHistorySessions(adapterInfo, projectPath)
-                }.onSuccess { adapterSessions ->
-                    sessions.addAll(adapterSessions)
-                    scannedAdapters.add(adapterInfo.id)
+        if (adapters.isEmpty()) return AvailableSessionMetaResult(emptyList(), emptySet())
+
+        return withContext(Dispatchers.IO) {
+            coroutineScope {
+                val sessions = mutableListOf<SessionMeta>()
+                val scannedAdapters = linkedSetOf<String>()
+                val lock = Any()
+
+                val jobs = adapters.map { adapterInfo ->
+                    async {
+                        if (!service.isAdapterReady(adapterInfo.id)) return@async
+                        runCatching {
+                            withTimeout(30_000L) {
+                                service.listHistorySessions(adapterInfo, projectPath)
+                            }
+                        }.onSuccess { adapterSessions ->
+                            synchronized(lock) {
+                                sessions.addAll(adapterSessions)
+                                scannedAdapters.add(adapterInfo.id)
+                            }
+                        }
+                    }
                 }
+
+                jobs.forEach { it.await() }
+                AvailableSessionMetaResult(sessions, scannedAdapters)
             }
-            AvailableSessionMetaResult(sessions, scannedAdapters)
         }
     }
 
@@ -314,17 +332,23 @@ internal object HistorySyncService {
         projectPath: String,
         conversations: List<HistoryConversationIndexEntry>
     ): List<SessionMeta> {
+        val downloadedCache = mutableMapOf<String, Boolean>()
+
+        fun isDownloadedCached(adapterName: String): Boolean {
+            return downloadedCache.getOrPut(adapterName) {
+                runCatching { AcpAdapterPaths.isDownloaded(adapterName) }.getOrDefault(false)
+            }
+        }
+
         return conversations
             .filter { runCatching { HistoryStorage.requireSafeConversationId(it.id) }.isSuccess }
             .mapNotNull { conversation ->
                 val visibleSessions = conversation.sessions.filter { session ->
-                    runCatching { AcpAdapterPaths.isDownloaded(session.adapterName) }.getOrDefault(false)
+                    isDownloadedCached(session.adapterName)
                 }
                 val latestSession = visibleSessions.maxByOrNull { it.updatedAt } ?: return@mapNotNull null
                 val visibleAdapterNames = HistoryConversationIndexService.adapterNamesForConversation(conversation)
-                    .filter { adapterName ->
-                        runCatching { AcpAdapterPaths.isDownloaded(adapterName) }.getOrDefault(false)
-                    }
+                    .filter { adapterName -> isDownloadedCached(adapterName) }
                 SessionMeta(
                     sessionId = latestSession.sessionId,
                     adapterName = latestSession.adapterName,

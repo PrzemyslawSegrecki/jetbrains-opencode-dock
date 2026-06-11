@@ -30,6 +30,8 @@ internal data class AdapterPayload(
     val availableModels: List<AdapterModelPayload>,
     val currentModeId: String,
     val availableModes: List<AdapterModePayload>,
+    val currentVariant: String = "",
+    val availableVariants: List<String> = emptyList(),
     val downloaded: Boolean? = null,
     val downloadedKnown: Boolean = false,
     val runtimeSource: String = "",

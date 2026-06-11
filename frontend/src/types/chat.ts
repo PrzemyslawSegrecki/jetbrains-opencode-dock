@@ -90,6 +90,11 @@ export interface ModelOption {
   description?: string;
 }
 
+export interface VariantOption {
+  id: string;
+  name?: string;
+}
+
 export interface ModeOption {
   id: string;
   name: string;
@@ -111,6 +116,8 @@ export interface AgentOption {
   availableModels?: ModelOption[];
   currentModeId?: string;
   availableModes?: ModeOption[];
+  currentVariant?: string;
+  availableVariants?: string[];
   downloaded?: boolean;
   downloadedKnown?: boolean;
   runtimeSource?: 'local' | 'system' | '';
@@ -464,6 +471,7 @@ declare global {
     __startAgent?: (conversationId: string, adapterId?: string, modelId?: string, requestId?: string) => void;
     __setModel?: (conversationId: string, adapterId: string, modelId: string) => void;
     __setMode?: (conversationId: string, adapterId: string, modeId: string) => void;
+    __setEffort?: (conversationId: string, adapterId: string, variantId: string) => void;
     __sendPrompt?: (
       conversationId: string,
       message: string,

@@ -5,6 +5,8 @@ import com.agentclientprotocol.common.ClientSessionOperations
 import com.agentclientprotocol.common.SessionCreationParameters
 import com.agentclientprotocol.model.AcpCreatedSessionResponse
 import com.agentclientprotocol.model.ModelId
+import com.agentclientprotocol.model.SessionConfigId
+import com.agentclientprotocol.model.SessionConfigOptionValue
 import com.agentclientprotocol.model.SessionId
 import com.agentclientprotocol.model.SessionModeId
 import kotlinx.coroutines.Dispatchers
@@ -154,6 +156,7 @@ internal suspend fun AcpClientService.loadSession(
             context.activeAdapterNameRef.set(null)
             context.activeModelIdRef.set(null)
             context.activeModeIdRef.set(null)
+            context.activeVariantRef.set(null)
 
             try {
                 loadSessionIntoContext(
@@ -197,6 +200,7 @@ internal suspend fun AcpClientService.loadConversation(chatId: String, sessionsC
             context.activeAdapterNameRef.set(null)
             context.activeModelIdRef.set(null)
             context.activeModeIdRef.set(null)
+            context.activeVariantRef.set(null)
 
             try {
                 sessionsChain.forEachIndexed { index, session ->
@@ -287,12 +291,20 @@ internal suspend fun AcpClientService.loadSessionIntoContext(
 
         if (session.modesSupported) {
             context.activeModeIdRef.set(session.currentMode.value.value)
+        } else if (session.configOptionsSupported) {
+            selectConfigOption(session.configOptions.value, modeConfigOptionId())?.let { modeOption ->
+                context.activeModeIdRef.set(modeOption.currentValue.value)
+            }
         } else if (!preferredModeId.isNullOrBlank()) {
             context.activeModeIdRef.set(preferredModeId.trim())
         }
         @OptIn(com.agentclientprotocol.annotations.UnstableApi::class)
         if (session.modelsSupported) {
             context.activeModelIdRef.set(session.currentModel.value.value)
+        } else if (session.configOptionsSupported) {
+            selectConfigOption(session.configOptions.value, modelConfigOptionId())?.let { modelOption ->
+                context.activeModelIdRef.set(modelOption.currentValue.value)
+            }
         } else if (!preferredModelId.isNullOrBlank()) {
             context.activeModelIdRef.set(preferredModelId.trim())
         }
@@ -332,6 +344,7 @@ private suspend fun AcpClientService.applyRequestedSessionPreferences(
     runtimeMetadata: AcpClientService.AdapterRuntimeMetadata?,
     context: AcpClientService.AgentContext
 ) {
+    val adapterInfo = AcpAdapterPaths.getAdapterInfo(adapterName)
     val selectedModelId = resolveModelToApply(
         preferredModelId,
         runtimeMetadata?.availableModels ?: emptyList(),
@@ -339,7 +352,19 @@ private suspend fun AcpClientService.applyRequestedSessionPreferences(
     )
     if (selectedModelId != null) {
         runCatching {
-            session.setModel(ModelId(selectedModelId))
+            if (session.modelsSupported) {
+                session.setModel(ModelId(selectedModelId))
+            } else if (session.configOptionsSupported && selectConfigOption(session.configOptions.value, modelConfigOptionId()) != null) {
+                val response = session.setConfigOption(
+                    SessionConfigId(modelConfigOptionId()),
+                    SessionConfigOptionValue.of(selectedModelId)
+                )
+                runtimeMetadataFromConfigOptions(adapterInfo, response.configOptions)?.let { metadata ->
+                    adapterRuntimeMetadataMap[adapterName] = metadata.copy(currentModelId = selectedModelId)
+                }
+            } else {
+                return@runCatching
+            }
             context.activeModelIdRef.set(selectedModelId)
             AcpAgentPreferencesStore.rememberModel(adapterName, selectedModelId)
         }.onFailure {
@@ -352,7 +377,19 @@ private suspend fun AcpClientService.applyRequestedSessionPreferences(
         ?: runtimeMetadata?.currentModeId
     if (currentModeId != null) {
         runCatching {
-            session.setMode(SessionModeId(currentModeId))
+            if (session.modesSupported) {
+                session.setMode(SessionModeId(currentModeId))
+            } else if (session.configOptionsSupported && selectConfigOption(session.configOptions.value, modeConfigOptionId()) != null) {
+                val response = session.setConfigOption(
+                    SessionConfigId(modeConfigOptionId()),
+                    SessionConfigOptionValue.of(currentModeId)
+                )
+                runtimeMetadataFromConfigOptions(adapterInfo, response.configOptions)?.let { metadata ->
+                    adapterRuntimeMetadataMap[adapterName] = metadata.copy(currentModeId = currentModeId)
+                }
+            } else {
+                return@runCatching
+            }
             context.activeModeIdRef.set(currentModeId)
             AcpAgentPreferencesStore.rememberMode(adapterName, currentModeId)
         }.onFailure {

@@ -152,7 +152,9 @@ private fun AcpBridge.buildAdapterPayload(
             currentModelId = null,
             availableModels = emptyList(),
             currentModeId = null,
-            availableModes = emptyList()
+            availableModes = emptyList(),
+            currentVariant = null,
+            availableVariants = emptyList()
         )
     val resolvedCurrentModelId = savedPreference?.modelId
         ?.takeIf { preferred ->
@@ -182,6 +184,8 @@ private fun AcpBridge.buildAdapterPayload(
         availableModes = runtimeMetadata.availableModes.map {
             AdapterModePayload(it.id, it.name, it.description.orEmpty())
         },
+        currentVariant = runtimeMetadata.currentVariant ?: "",
+        availableVariants = runtimeMetadata.availableVariants,
         downloaded = downloaded,
         downloadedKnown = downloadedKnown,
         runtimeSource = runtimeSource,

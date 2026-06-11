@@ -77,6 +77,9 @@ export default function ChatSessionView({
     modeOptions,
     selectedModeId,
     handleModeChange,
+    selectedVariantId,
+    effortOptions,
+    handleEffortChange,
     permissionRequest,
     handleSend,
     handleStop,
@@ -303,6 +306,9 @@ export default function ChatSessionView({
             modeOptions={modeOptions}
             selectedModeId={selectedModeId}
             onModeChange={handleModeChange}
+            effortOptions={effortOptions}
+            selectedVariantId={selectedVariantId}
+            onEffortChange={handleEffortChange}
             
             hasSelectedAgent={hasSelectedAgent}
             availableCommands={availableCommands}

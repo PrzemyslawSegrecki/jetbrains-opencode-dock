@@ -13,6 +13,7 @@ export default function ChatDropdown({
   customTrigger,
   collapsed = false,
   showSubValueInTrigger = false,
+  selectFirstSubOptionOnParentClick = false,
   onChange,
   onSubChange,
   className = '',
@@ -27,6 +28,7 @@ export default function ChatDropdown({
   customTrigger?: React.ReactNode;
   collapsed?: boolean;
   showSubValueInTrigger?: boolean;
+  selectFirstSubOptionOnParentClick?: boolean;
   onChange: (value: string) => void;
   onSubChange?: (parentId: string, subId: string) => void;
   className?: string;
@@ -160,6 +162,23 @@ export default function ChatDropdown({
     });
   };
 
+  const selectOption = (option: DropdownOption) => {
+    const firstSubOption = option.subOptions?.find((subOption) => subOption.id === subValue) ?? option.subOptions?.[0];
+    if (firstSubOption && selectFirstSubOptionOnParentClick) {
+      onChange(option.id);
+      onSubChange?.(option.id, firstSubOption.id);
+      setOpen(false);
+      setHoveredOptionId(null);
+      return;
+    }
+
+    if (!option.subOptions) {
+      onChange(option.id);
+      setOpen(false);
+      setHoveredOptionId(null);
+    }
+  };
+
   const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (disabled || options.length === 0) return;
     if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
@@ -189,6 +208,11 @@ export default function ChatDropdown({
       event.preventDefault();
       setHoveredOptionId(option.id);
       requestAnimationFrame(() => focusSubOption(0));
+      return;
+    }
+    if ((event.key === 'Enter' || event.key === ' ') && option) {
+      event.preventDefault();
+      selectOption(option);
       return;
     }
     if (event.key === 'Escape') {
@@ -292,11 +316,7 @@ export default function ChatDropdown({
                       }}
                       onKeyDown={(event) => handleMainOptionKeyDown(event, index)}
                       onClick={() => {
-                        if (!option.subOptions) {
-                          onChange(option.id);
-                          setOpen(false);
-                          setHoveredOptionId(null);
-                        }
+                        selectOption(option);
                       }}
                       className={`flex items-center w-full my-0.5 px-2 min-h-8 text-left transition-colors 
                         rounded min-w-[70px] outline-none 

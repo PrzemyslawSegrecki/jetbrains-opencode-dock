@@ -14,6 +14,7 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val startAgentInject = startAgentQuery?.inject("JSON.stringify({ requestId: (requestId || ''), chatId: chatId, adapterId: (adapterId || ''), modelId: (modelId || '') })") ?: ""
     val setModelInject = setModelQuery?.inject("JSON.stringify({ chatId: chatId, adapterId: (adapterId || ''), modelId: modelId })") ?: ""
     val setModeInject = setModeQuery?.inject("JSON.stringify({ chatId: chatId, adapterId: (adapterId || ''), modeId: modeId })") ?: ""
+    val setEffortInject = setEffortQuery?.inject("JSON.stringify({ chatId: chatId, adapterId: (adapterId || ''), variantId: variantId })") ?: ""
     val listAdaptersInject = listAdaptersQuery?.inject("") ?: ""
     val sendPromptInject = sendPromptQuery?.inject("JSON.stringify({ requestId: (requestId || ''), chatId: chatId, text: message, forkBase: forkBase || null })") ?: ""
     val cancelPromptInject = cancelPromptQuery?.inject("JSON.stringify({ requestId: (requestId || ''), chatId: chatId })") ?: ""
@@ -64,6 +65,9 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
             };
             window.__setMode = function(chatId, adapterId, modeId) {
                 try { $setModeInject } catch (e) { }
+            };
+            window.__setEffort = function(chatId, adapterId, variantId) {
+                try { $setEffortInject } catch (e) { }
             };
             window.__sendPrompt = function(chatId, message, requestId, forkBase) {
                 try {

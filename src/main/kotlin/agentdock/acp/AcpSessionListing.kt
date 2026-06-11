@@ -38,3 +38,18 @@ internal suspend fun AcpClientService.listHistorySessions(
         )
     }
 }
+
+@OptIn(UnstableApi::class)
+internal suspend fun AcpClientService.fetchSessionsForHistory(
+    projectPath: String
+): List<SessionMeta> {
+    ensureExecutionTargetCurrent()
+
+    val adapterInfo = AcpAdapterConfig.getAllAdapters().values
+        .firstOrNull { it.supportsSessionList && AcpAdapterPaths.isDownloaded(it.id) }
+        ?: return emptyList()
+
+    if (!isAdapterReady(adapterInfo.id)) return emptyList()
+
+    return listHistorySessions(adapterInfo, projectPath)
+}

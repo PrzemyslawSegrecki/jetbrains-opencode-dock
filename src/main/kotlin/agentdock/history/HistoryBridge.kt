@@ -13,6 +13,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.cef.browser.CefBrowser
 import opencodedock.utils.escapeForJsString
+import java.util.concurrent.ConcurrentHashMap
 
 private val permissiveJson = Json {
     ignoreUnknownKeys = true
@@ -49,20 +50,20 @@ class HistoryBridge(
     private var deleteHistoryQuery: JBCefJSQuery? = null
     private var renameHistoryQuery: JBCefJSQuery? = null
 
+    @Volatile
+    private var cachedHistoryJson: String = "[]"
+    private val syncingProjects = ConcurrentHashMap.newKeySet<String>()
+
     fun install() {
         val defaultProjectPath = project.basePath ?: System.getProperty("user.dir")
 
         listHistoryQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
             addHandler { payload ->
                 val projectPath = payload?.trim()?.takeUnless { it.isEmpty() || it == "undefined" } ?: defaultProjectPath
-                scope.launch(Dispatchers.Default) {
-                    try {
-                        val history = OpenCodeDockHistoryService.getHistoryList(projectPath)
-                        pushHistoryList(permissiveJson.encodeToString(history))
-                    } catch (e: Exception) {
-                        sendJsError("Failed to list history: ${e.message}")
-                    }
-                }
+
+                pushHistoryList(cachedHistoryJson)
+                triggerBackgroundSync(projectPath)
+
                 JBCefJSQuery.Response("ok")
             }
         }
@@ -70,13 +71,9 @@ class HistoryBridge(
         syncHistoryQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
             addHandler { payload ->
                 val projectPath = payload?.trim()?.takeUnless { it.isEmpty() || it == "undefined" } ?: defaultProjectPath
+
                 scope.launch(Dispatchers.Default) {
-                    try {
-                        val history = OpenCodeDockHistoryService.syncAndGetHistoryList(projectPath)
-                        pushHistoryList(permissiveJson.encodeToString(history))
-                    } catch (e: Exception) {
-                        sendJsError("Failed to sync history: ${e.message}")
-                    }
+                    syncAndUpdateCache(projectPath)
                 }
                 JBCefJSQuery.Response("ok")
             }
@@ -87,11 +84,13 @@ class HistoryBridge(
                 if (payload.isNullOrBlank()) return@addHandler JBCefJSQuery.Response(null, -1, "Empty payload")
 
                 scope.launch(Dispatchers.Default) {
+                    val request = runCatching { permissiveJson.decodeFromString<DeleteHistoryPayload>(payload) }.getOrNull()
+                    if (request == null) {
+                        sendJsError("Invalid delete payload")
+                        return@launch
+                    }
                     try {
-                        val request = permissiveJson.decodeFromString<DeleteHistoryPayload>(payload)
                         val result = OpenCodeDockHistoryService.deleteConversations(request.projectPath, request.conversationIds)
-                        val history = OpenCodeDockHistoryService.getHistoryList(request.projectPath)
-                        pushHistoryList(permissiveJson.encodeToString(history))
                         pushDeleteResult(
                             DeleteHistoryResultPayload(
                                 success = result.success,
@@ -99,23 +98,17 @@ class HistoryBridge(
                                 failures = result.failures
                             )
                         )
+                        triggerBackgroundSync(request.projectPath)
                     } catch (e: Exception) {
-                        val request = runCatching { permissiveJson.decodeFromString<DeleteHistoryPayload>(payload) }.getOrNull()
-                        if (request != null) {
-                            pushDeleteResult(
-                                DeleteHistoryResultPayload(
-                                    success = false,
-                                    requestedConversationIds = request.conversationIds,
-                                    failures = request.conversationIds.map { conversationId ->
-                                        DeleteConversationFailure(
-                                            conversationId = conversationId,
-                                            message = "Error during deletion: ${e.message ?: e.toString()}"
-                                        )
-                                    }
-                                )
+                        pushDeleteResult(
+                            DeleteHistoryResultPayload(
+                                success = false,
+                                requestedConversationIds = request.conversationIds,
+                                failures = request.conversationIds.map { conversationId ->
+                                    DeleteConversationFailure(conversationId, "Error: ${e.message ?: e}")
+                                }
                             )
-                        }
-                        sendJsError("Error during deletion: ${e.message}")
+                        )
                     }
                 }
                 JBCefJSQuery.Response("ok")
@@ -127,12 +120,15 @@ class HistoryBridge(
                 if (payload.isNullOrBlank()) return@addHandler JBCefJSQuery.Response(null, -1, "Empty payload")
 
                 scope.launch(Dispatchers.Default) {
+                    val request = runCatching { permissiveJson.decodeFromString<RenameHistoryPayload>(payload) }.getOrNull()
+                    if (request == null) {
+                        sendJsError("Invalid rename payload")
+                        return@launch
+                    }
                     try {
-                        val request = permissiveJson.decodeFromString<RenameHistoryPayload>(payload)
                         val success = OpenCodeDockHistoryService.renameConversation(request.projectPath, request.conversationId, request.newTitle)
                         if (success) {
-                            val history = OpenCodeDockHistoryService.getHistoryList(request.projectPath)
-                            pushHistoryList(permissiveJson.encodeToString(history))
+                            triggerBackgroundSync(request.projectPath)
                         } else {
                             sendJsError("Failed to rename conversation")
                         }
@@ -143,6 +139,24 @@ class HistoryBridge(
                 JBCefJSQuery.Response("ok")
             }
         }
+    }
+
+    private fun triggerBackgroundSync(projectPath: String) {
+        if (!syncingProjects.add(projectPath)) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                syncAndUpdateCache(projectPath)
+            } finally {
+                syncingProjects.remove(projectPath)
+            }
+        }
+    }
+
+    private suspend fun syncAndUpdateCache(projectPath: String) {
+        val history = OpenCodeDockHistoryService.syncAndGetHistoryList(projectPath)
+        val json = permissiveJson.encodeToString(history)
+        cachedHistoryJson = json
+        pushHistoryList(json)
     }
 
     fun injectApi(cefBrowser: CefBrowser) {

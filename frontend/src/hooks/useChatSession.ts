@@ -6,7 +6,8 @@ import {
   HistorySessionMeta,
   ChatAttachment,
   PendingHandoffContext,
-  ForkConversationBase
+  ForkConversationBase,
+  DropdownOption
 } from '../types/chat';
 import { ACPBridge } from '../utils/bridge';
 import { buildReplayMessages } from '../utils/replay';
@@ -66,6 +67,7 @@ export function useChatSession(
   const startedAgentIdRef = useRef<string>('');
   const startedModelIdRef = useRef<string>('');
   const startedModeIdRef = useRef<string>('');
+  const startedVariantRef = useRef<string>('');
   const historyLoadRequestedRef = useRef<string | null>(null);
   const statusRef = useRef<string>('not started');
   const startTimeRef = useRef<number | null>(null);
@@ -184,11 +186,14 @@ export function useChatSession(
   const effectiveSelectedAgent = resolvedSelectedAgent;
   const {
     availableModes,
+    availableVariants,
     selectedModelId,
     selectedModeId,
+    selectedVariantId,
     modelIdForStart,
     handleModelChange,
     handleModeChange,
+    handleEffortChange,
   } = useAgentRuntimeOptions({
     availableAgents,
     effectiveSelectedAgent,
@@ -199,6 +204,7 @@ export function useChatSession(
     startedAgentIdRef,
     startedModelIdRef,
     startedModeIdRef,
+    startedVariantRef,
   });
 
   const adapterDisplayName = resolvedSelectedAgent?.name || '';
@@ -209,6 +215,13 @@ export function useChatSession(
   const modeOptions = useMemo(
     () => buildModeOptions(availableModes, selectedModeId),
     [availableModes, selectedModeId]
+  );
+  const effortOptions = useMemo<DropdownOption[]>(
+    () => availableVariants.map((variant) => ({
+      id: variant,
+      label: variant.charAt(0).toUpperCase() + variant.slice(1),
+    })),
+    [availableVariants]
   );
 
   const failActivePromptLocally = useCallback((message: string) => {
@@ -736,6 +749,9 @@ export function useChatSession(
     selectedModeId,
     modeOptions,
     handleModeChange,
+    selectedVariantId,
+    effortOptions,
+    handleEffortChange,
     permissionRequest,
     handleSend,
     handleStop,

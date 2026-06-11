@@ -24,6 +24,8 @@ interface ChatInputControlsProps {
   selectedModelId: string;
   selectedModeId: string;
   modeOptions: DropdownOption[];
+  effortOptions: DropdownOption[];
+  selectedVariantId: string;
   isSending: boolean;
   hasSelectedAgent: boolean;
   contextTokensUsed?: number;
@@ -40,6 +42,7 @@ interface ChatInputControlsProps {
   handleVoiceInput: () => void;
   onModelChange: (id: string, targetAgentId?: string) => void;
   onModeChange: (id: string) => void;
+  onEffortChange: (id: string) => void;
   onSend: () => void;
   onStop: () => void;
 }
@@ -55,6 +58,8 @@ export function ChatInputControls({
   selectedModelId,
   selectedModeId,
   modeOptions,
+  effortOptions,
+  selectedVariantId,
   isSending,
   hasSelectedAgent,
   contextTokensUsed,
@@ -71,6 +76,7 @@ export function ChatInputControls({
   handleVoiceInput,
   onModelChange,
   onModeChange,
+  onEffortChange,
   onSend,
   onStop,
 }: ChatInputControlsProps) {
@@ -136,7 +142,15 @@ export function ChatInputControls({
           disabled={isSending || modelOptions.length === 0}
           collapsed={collapsedAgentDropdown}
           showSubValueInTrigger={true}
-          onChange={() => {}}
+          selectFirstSubOptionOnParentClick={true}
+          onChange={(groupOptionId) => {
+            const targetGroup = modelGroups.find((group) => `${group.agentId}:${group.label}` === groupOptionId);
+            const fallbackModelId = targetGroup?.options.find((option) => option.modelId === selectedModelId)?.modelId
+              ?? targetGroup?.options[0]?.modelId;
+            if (fallbackModelId) {
+              onModelChange(fallbackModelId, targetGroup?.agentId ?? selectedGroup?.agentId);
+            }
+          }}
           onSubChange={(groupOptionId, modelId) => {
             const targetGroup = modelGroups.find((group) => `${group.agentId}:${group.label}` === groupOptionId);
             onModelChange(modelId, targetGroup?.agentId ?? selectedGroup?.agentId);
@@ -151,6 +165,17 @@ export function ChatInputControls({
             placeholder="Mode"
             disabled={isSending || !hasSelectedAgent}
             onChange={onModeChange}
+            className="ml-0.5"
+          />
+        )}
+
+        {effortOptions.length > 0 && (
+          <ChatDropdown
+            value={selectedVariantId}
+            options={effortOptions}
+            placeholder="Effort"
+            disabled={isSending || !hasSelectedAgent}
+            onChange={onEffortChange}
             className="ml-0.5"
           />
         )}

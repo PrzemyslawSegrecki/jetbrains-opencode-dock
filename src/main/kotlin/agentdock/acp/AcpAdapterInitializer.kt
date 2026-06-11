@@ -62,12 +62,14 @@ internal fun AcpClientService.hydrateAdapterRuntimeMetadataFromCache() {
         val modes = cache.availableModes.map {
             AcpAdapterConfig.ModeInfo(id = it.id, name = it.name, description = it.description.ifBlank { null })
         }
-        if (models.isEmpty() && modes.isEmpty()) return@forEach
+        if (models.isEmpty() && modes.isEmpty() && cache.availableVariants.isEmpty()) return@forEach
         adapterRuntimeMetadataMap[adapterId] = AcpClientService.AdapterRuntimeMetadata(
             currentModelId = cache.currentModelId.takeIf { it.isNotBlank() },
             availableModels = models,
             currentModeId = cache.currentModeId.takeIf { it.isNotBlank() },
-            availableModes = modes
+            availableModes = modes,
+            currentVariant = cache.currentVariant.takeIf { it.isNotBlank() },
+            availableVariants = cache.availableVariants
         )
     }
 }
@@ -85,7 +87,9 @@ internal fun AcpClientService.persistAdapterRuntimeMetadataCache(
             currentModeId = metadata.currentModeId.orEmpty(),
             availableModes = metadata.availableModes.map {
                 AcpCachedMode(id = it.id, name = it.name, description = it.description.orEmpty())
-            }
+            },
+            currentVariant = metadata.currentVariant.orEmpty(),
+            availableVariants = metadata.availableVariants
         )
         AcpAgentPreferencesStore.rememberMetadataCache(adapterName, cache)
     }
@@ -361,7 +365,9 @@ internal suspend fun AcpClientService.initializeSharedProcessAtStartup(
 
         val protocolScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         sharedProc.protocolScope = protocolScope
-        val transport = StdioTransport(protocolScope, Dispatchers.IO, input, output)
+        val transport = SessionIdPatchingTransport(
+            StdioTransport(protocolScope, Dispatchers.IO, input, output)
+        )
         val prot = Protocol(protocolScope, transport)
         sharedProc.protocol = prot
 
@@ -470,6 +476,11 @@ internal suspend fun AcpClientService.fetchAdapterRuntimeMetadata(
     }
 
     val session = client.newSession(params, factory)
+    val configMetadata = if (session.configOptionsSupported) {
+        runtimeMetadataFromConfigOptions(adapterInfo, session.configOptions.value)
+    } else {
+        null
+    }
     val models = if (session.modelsSupported) {
         session.availableModels.map { model ->
             AcpAdapterConfig.ModelInfo(
@@ -479,7 +490,7 @@ internal suspend fun AcpClientService.fetchAdapterRuntimeMetadata(
             )
         }
     } else {
-        emptyList()
+        configMetadata?.availableModels ?: emptyList()
     }
     val modes = if (session.modesSupported) {
         session.availableModes.map { mode ->
@@ -490,16 +501,18 @@ internal suspend fun AcpClientService.fetchAdapterRuntimeMetadata(
             )
         }
     } else {
-        emptyList()
+        configMetadata?.availableModes ?: emptyList()
     }
 
     return AdapterRuntimeMetadataFetchResult(
         metadata = applyAdapterRuntimePreferences(
             adapterInfo = adapterInfo,
-            currentModelId = if (session.modelsSupported) session.currentModel.value.value else null,
+            currentModelId = if (session.modelsSupported) session.currentModel.value.value else configMetadata?.currentModelId,
             availableModels = models,
-            currentModeId = if (session.modesSupported) session.currentMode.value.value else null,
-            availableModes = modes
+            currentModeId = if (session.modesSupported) session.currentMode.value.value else configMetadata?.currentModeId,
+            availableModes = modes,
+            currentVariant = configMetadata?.currentVariant,
+            availableVariants = configMetadata?.availableVariants ?: emptyList()
         ),
         sessionId = session.sessionId.value
     )
@@ -510,7 +523,9 @@ internal fun AcpClientService.applyAdapterRuntimePreferences(
     currentModelId: String?,
     availableModels: List<AcpAdapterConfig.ModelInfo>,
     currentModeId: String?,
-    availableModes: List<AcpAdapterConfig.ModeInfo>
+    availableModes: List<AcpAdapterConfig.ModeInfo>,
+    currentVariant: String? = null,
+    availableVariants: List<String> = emptyList()
 ): AcpClientService.AdapterRuntimeMetadata {
     val filteredModels = availableModels.filterNot { model ->
         adapterInfo.disabledModels.any { disabled -> disabled.isNotBlank() && model.modelId.contains(disabled) }
@@ -534,7 +549,9 @@ internal fun AcpClientService.applyAdapterRuntimePreferences(
         currentModelId = preferredModelId,
         availableModels = filteredModels,
         currentModeId = preferredModeId,
-        availableModes = filteredModes
+        availableModes = filteredModes,
+        currentVariant = currentVariant,
+        availableVariants = availableVariants
     )
 }
 

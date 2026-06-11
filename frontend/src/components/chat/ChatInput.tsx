@@ -23,6 +23,9 @@ export default function ChatInput(props: ChatInputProps) {
     modeOptions,
     selectedModeId,
     onModeChange,
+    effortOptions,
+    selectedVariantId,
+    onEffortChange,
     hasSelectedAgent,
     attachments,
     onAttachmentsChange,
@@ -116,6 +119,8 @@ export default function ChatInput(props: ChatInputProps) {
             selectedModelId={selectedModelId}
             selectedModeId={selectedModeId}
             modeOptions={modeOptions}
+            effortOptions={effortOptions}
+            selectedVariantId={selectedVariantId}
             isSending={isSending}
             hasSelectedAgent={hasSelectedAgent}
             contextTokensUsed={contextTokensUsed}
@@ -132,6 +137,7 @@ export default function ChatInput(props: ChatInputProps) {
             handleVoiceInput={handleVoiceInput}
             onModelChange={onModelChange}
             onModeChange={onModeChange}
+            onEffortChange={onEffortChange}
             onSend={onSend}
             onStop={onStop}
           />

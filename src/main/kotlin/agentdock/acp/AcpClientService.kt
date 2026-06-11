@@ -43,7 +43,9 @@ class AcpClientService private constructor(val project: Project) {
         val currentModelId: String?,
         val availableModels: List<AcpAdapterConfig.ModelInfo>,
         val currentModeId: String?,
-        val availableModes: List<AcpAdapterConfig.ModeInfo>
+        val availableModes: List<AcpAdapterConfig.ModeInfo>,
+        val currentVariant: String? = null,
+        val availableVariants: List<String> = emptyList()
     )
 
     companion object {
@@ -285,6 +287,7 @@ class AcpClientService private constructor(val project: Project) {
         val activeAdapterNameRef = AtomicReference<String?>(null)
         val activeModelIdRef = AtomicReference<String?>(null)
         val activeModeIdRef = AtomicReference<String?>(null)
+        val activeVariantRef = AtomicReference<String?>(null)
         @Volatile var lastHistoryLoadTime: Long = System.currentTimeMillis()
         @Volatile var allowReplayDelivery: Boolean = true
         @Volatile var ignoreUpdatesUntilPrompt: Boolean = false
@@ -304,6 +307,7 @@ class AcpClientService private constructor(val project: Project) {
             activeAdapterNameRef.set(null)
             activeModelIdRef.set(null)
             activeModeIdRef.set(null)
+            activeVariantRef.set(null)
             lastHistoryLoadTime = 0
             allowReplayDelivery = true
             ignoreUpdatesUntilPrompt = false

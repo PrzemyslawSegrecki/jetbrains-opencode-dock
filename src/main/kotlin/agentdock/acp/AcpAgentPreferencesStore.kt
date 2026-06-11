@@ -32,7 +32,9 @@ data class AcpAdapterMetadataCache(
     val currentModelId: String = "",
     val availableModels: List<AcpCachedModel> = emptyList(),
     val currentModeId: String = "",
-    val availableModes: List<AcpCachedMode> = emptyList()
+    val availableModes: List<AcpCachedMode> = emptyList(),
+    val currentVariant: String = "",
+    val availableVariants: List<String> = emptyList()
 )
 
 @Serializable
@@ -228,7 +230,9 @@ object AcpAgentPreferencesStore {
                 currentModelId = cache.currentModelId.trim(),
                 availableModels = normalizedModels,
                 currentModeId = cache.currentModeId.trim(),
-                availableModes = normalizedModes
+                availableModes = normalizedModes,
+                currentVariant = cache.currentVariant.trim(),
+                availableVariants = cache.availableVariants.mapNotNull { it.trim().takeIf(String::isNotEmpty) }
             )
         }.toMap()
         return AcpAgentPreferencesState(

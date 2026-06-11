@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>opencodedock</id>
     <name>OpenCode Dock</name>
-    <version>1.3.0</version>
+    <version>1.3.2</version>
     <vendor>Przemyslaw Segrecki</vendor>
 
     <description><![CDATA[
@@ -36,8 +36,12 @@
 
     <change-notes><![CDATA[
         <ul>
-            <li>Fixed tool window icon visibility when inactive on light themes.</li>
-            <li>Rebranded from Agent Dock to OpenCode Dock with simplified single-provider UX.</li>
+            <li>OpenCode 1.16.2 compatibility: model selection now reads from ACP configOptions instead of legacy models field.</li>
+            <li>New Effort dropdown for models that support reasoning levels (low/default/high).</li>
+            <li>History loading is now asynchronous and non-blocking: cached data appears instantly while background sync runs.</li>
+            <li>Fixed session loading for historical conversations broken by OpenCode 1.16.2 missing sessionId in session/load response.</li>
+            <li>Fixed history item conversationId mismatch causing wrong tab activation.</li>
+            <li>Updated plugin icons to OpenCode brand.</li>
         </ul>
     ]]></change-notes>
 
