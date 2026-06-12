@@ -5,20 +5,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import opencodedock.IdeTheme
 import opencodedock.utils.escapeForJsString
-import java.io.File
-import java.util.concurrent.TimeUnit
 
 private fun downloadProbeKey(target: AcpExecutionTarget, adapterId: String) = "${target.name}:$adapterId"
-
-private fun parseAgentVersion(config: AcpAdapterConfig.AgentVersionConfig, output: String): String? {
-    if (output.isBlank()) return null
-    val pattern = config.pattern
-    if (!pattern.isNullOrBlank()) {
-        val match = Regex(pattern).find(output) ?: return null
-        return (match.groups[1]?.value ?: match.value).takeIf { it.isNotBlank() }
-    }
-    return Regex("""(\d+\.\d+[\d.\-]*)""").find(output)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
-}
 
 private fun AcpAdapterConfig.AdapterInfo.resolveIconPath(): String? {
     val themePath = if (IdeTheme.isDarkTheme()) iconPathDark else iconPathLight
@@ -85,18 +73,8 @@ private fun AcpBridge.buildAdapterPayload(
     val initStatus = service.adapterInitializationStatus(info.id)
     val isInitializing = initStatus == AcpClientService.AdapterInitializationStatus.Initializing
 
-    val dlStatus = downloadStatuses[info.id] ?: ""
-    val isDownloading = dlStatus.isNotEmpty() && !dlStatus.startsWith("Error")
     val hasAuthentication = info.authConfig != null
     val installedVersion = probeState?.installedVersion
-    val rawAgentVersion = agentVersionStates[info.id]
-    val agentVersion = rawAgentVersion?.takeIf { it != installedVersion }
-    val updateSupported = downloaded == true && AcpAdapterUpdates.isUpdateCheckSupported(info)
-    val updateKey = "${target.name}:${info.id}"
-    val updateChecking = updateCheckJobs[updateKey]?.isActive == true
-    val latestVersion = if (!runtimeChecksReady || !updateSupported) null else latestVersionStates[info.id]
-    val updateKnown = updateSupported && !latestVersion.isNullOrBlank() && !installedVersion.isNullOrBlank()
-    val updateAvailable = updateKnown && latestVersion != installedVersion
     val authUiMode = info.authConfig?.uiMode ?: "login_logout"
     val isAuthenticating = AcpAuthService.isAuthenticating(info.id)
     val cliAvailable = downloaded == true && info.cli != null && cli.isIdeTerminalAvailable()
@@ -107,7 +85,7 @@ private fun AcpBridge.buildAdapterPayload(
 
     val shouldFetchAuth = downloadedKnown &&
         downloaded == true && managedLocally && hasAuthentication && authUiMode == "login_logout" &&
-        !isDownloading && !isAuthenticating
+        !isAuthenticating
 
     val needsAuthFetch = shouldFetchAuth && !authStates.containsKey(info.id)
     if (needsAuthFetch) {
@@ -206,14 +184,14 @@ private fun AcpBridge.buildAdapterPayload(
         ready = isReady,
         readyKnown = readyKnown,
         installedVersion = installedVersion,
-        agentVersion = agentVersion,
-        latestVersion = latestVersion,
-        updateSupported = updateSupported,
-        updateChecking = updateChecking,
-        updateKnown = updateKnown,
-        updateAvailable = updateAvailable,
-        downloading = isDownloading,
-        downloadStatus = dlStatus,
+        agentVersion = null,
+        latestVersion = null,
+        updateSupported = false,
+        updateChecking = false,
+        updateKnown = false,
+        updateAvailable = false,
+        downloading = false,
+        downloadStatus = "",
         disabledModels = info.disabledModels,
         hiddenModels = hiddenModels,
         cliAvailable = cliAvailable
@@ -300,62 +278,6 @@ internal fun AcpBridge.pushAdapters(includeRuntimeChecks: Boolean = true) {
             }
         }
 
-        unique.values.forEach { info ->
-            if (!includeRuntimeChecks) return@forEach
-            val key = "${target.name}:${info.id}"
-            if (updateCheckJobs[key]?.isActive == true) return@forEach
-            val downloaded = adapters.firstOrNull { it.id == info.id }?.downloaded == true
-            if (!downloaded || !AcpAdapterUpdates.isUpdateCheckSupported(info)) return@forEach
-            if (adapters.firstOrNull { it.id == info.id }?.runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) return@forEach
-            if (!latestVersionStates[info.id].isNullOrBlank()) return@forEach
-            updateCheckJobs[key] = scope.launch(Dispatchers.IO) {
-                try {
-                    AcpAdapterUpdates.latestAvailableVersion(info)?.let { latest ->
-                        latestVersionStates[info.id] = latest
-                    }
-                } finally {
-                    updateCheckJobs.remove(key)
-                }
-                pushAdapters()
-            }
-        }
-
-        unique.values.forEach { info ->
-            if (!includeRuntimeChecks) return@forEach
-            if (info.agentVersionConfig == null) return@forEach
-            if (agentVersionJobs[info.id]?.isActive == true) return@forEach
-            val adapterPayload = adapters.firstOrNull { it.id == info.id }
-            if (adapterPayload?.downloaded != true) return@forEach
-            if (adapterPayload.runtimeSource == ADAPTER_RUNTIME_SOURCE_SYSTEM) return@forEach
-            val isDownloading = adapterPayload.downloadStatus.isNotEmpty() && !adapterPayload.downloadStatus.startsWith("Error")
-            if (isDownloading) return@forEach
-            if (!agentVersionStates[info.id].isNullOrBlank()) return@forEach
-            agentVersionJobs[info.id] = scope.launch(Dispatchers.IO) {
-                try {
-                    val cmd = AcpAuthService.buildAgentVersionCommand(info)
-                    if (!cmd.isNullOrEmpty()) {
-                        val downloadPath = AcpAdapterPaths.getDownloadPath(info.id, target)
-                        val workDir = if (downloadPath.isNotBlank()) File(downloadPath) else null
-                        val builder = ProcessBuilder(cmd)
-                            .also { pb -> if (workDir != null) pb.directory(workDir) }
-                            .redirectErrorStream(true)
-                        AcpNodeRuntimeResolver.resolveAvailable()?.let { AcpNodeRuntimeResolver.applyTo(builder, it) }
-                        val proc = builder.start()
-                        val output = proc.inputStream.bufferedReader().use { it.readText() }.trim()
-                        val finished = proc.waitFor(10L, TimeUnit.SECONDS)
-                        if (!finished) proc.destroyForcibly()
-                        else {
-                            val version = parseAgentVersion(info.agentVersionConfig, output)
-                            if (!version.isNullOrBlank()) agentVersionStates[info.id] = version
-                        }
-                    }
-                } catch (_: Exception) {
-                } finally {
-                    agentVersionJobs.remove(info.id)
-                }
-                pushAdapters()
-            }
-        }
     } catch (_: Exception) {
     }
 }
@@ -367,19 +289,11 @@ internal fun AcpBridge.resetAuthStatusRefreshState() {
     downloadProbeJobs.values.forEach { it.cancel() }
     downloadProbeJobs.clear()
     downloadProbeStates.clear()
-    updateCheckJobs.values.forEach { it.cancel() }
-    updateCheckJobs.clear()
-    latestVersionStates.clear()
     agentVersionJobs.values.forEach { it.cancel() }
     agentVersionJobs.clear()
     agentVersionStates.clear()
     authActionJobs.values.forEach { it.cancel() }
     authActionJobs.clear()
-    adapterInstallCancellations.values.forEach { it.cancel() }
-    adapterInstallCancellations.clear()
-    adapterInstallJobs.values.forEach { it.cancel() }
-    adapterInstallJobs.clear()
-    downloadStatuses.clear()
     AcpAuthService.resetTransientState()
 }
 

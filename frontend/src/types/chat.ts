@@ -559,7 +559,6 @@ declare global {
     __loadGlobalSettings?: () => void;
     __saveGlobalSettings?: (payload: string) => void;
     __onGlobalSettings?: (payload: GlobalSettingsPayload) => void;
-    __onAdapterDeleted?: (adapterId: string) => void;
     __settingsBridgeReady?: boolean;
   }
 }

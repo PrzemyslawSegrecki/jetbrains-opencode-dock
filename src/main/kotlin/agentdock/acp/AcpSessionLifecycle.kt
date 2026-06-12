@@ -62,7 +62,7 @@ internal suspend fun AcpClientService.startAgent(
 
             if (!AcpAdapterPaths.isDownloaded(requestedAdapterName)) {
                 context.statusRef.set(AcpClientService.Status.Error)
-                throw IllegalStateException("Agent '$requestedAdapterName' is not downloaded")
+                throw IllegalStateException("OpenCode executable was not found on PATH. Install OpenCode system-wide and reopen the IDE.")
             }
             if (AcpAdapterPaths.runtimeSource(requestedAdapterName) == ADAPTER_RUNTIME_SOURCE_SYSTEM &&
                 !AcpAgentPreferencesStore.isSystemAdapterEnabled(requestedAdapterName)

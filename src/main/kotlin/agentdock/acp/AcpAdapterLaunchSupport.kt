@@ -33,6 +33,7 @@ internal fun resolveAdapterLaunchFile(
     target: AcpExecutionTarget
 ): File? {
     return when (adapterInfo.distribution.type) {
+        AcpAdapterConfig.DistributionType.SYSTEM -> null
         AcpAdapterConfig.DistributionType.ARCHIVE -> {
             val binName = platformBinaryForTarget(adapterInfo.distribution.binaryName, target)
             if (binName.isNullOrBlank()) null else File(adapterRoot, binName)
@@ -50,6 +51,8 @@ internal fun resolveAdapterLaunchPath(
     target: AcpExecutionTarget
 ): String? {
     return when (adapterInfo.distribution.type) {
+        AcpAdapterConfig.DistributionType.SYSTEM ->
+            platformBinaryForTarget(adapterInfo.systemExecutable, target)?.takeIf { it.isNotBlank() }
         AcpAdapterConfig.DistributionType.ARCHIVE -> {
             val binName = platformBinaryForTarget(adapterInfo.distribution.binaryName, target)
             binName?.takeIf { it.isNotBlank() }?.let { joinAdapterPath(adapterRootPath, it, target) }
@@ -67,6 +70,9 @@ internal fun resolveAdapterRuntimePath(
     target: AcpExecutionTarget
 ): String? {
     val systemExecutable = resolveSystemExecutable(adapterInfo, target)
+    if (adapterInfo.preferSystemExecutable) {
+        return systemExecutable
+    }
     if (systemExecutable != null && (adapterInfo.preferSystemExecutable || !isLocalLaunchAvailable(adapterRootPath, adapterInfo, target))) {
         return systemExecutable
     }
@@ -80,6 +86,9 @@ internal fun resolveAdapterRuntimeSource(
 ): String? {
     val localAvailable = isLocalLaunchAvailable(adapterRootPath, adapterInfo, target)
     val systemAvailable = isSystemExecutableAvailable(adapterInfo, target)
+    if (adapterInfo.preferSystemExecutable) {
+        return if (systemAvailable) ADAPTER_RUNTIME_SOURCE_SYSTEM else null
+    }
     return when {
         systemAvailable && (adapterInfo.preferSystemExecutable || !localAvailable) -> ADAPTER_RUNTIME_SOURCE_SYSTEM
         localAvailable -> ADAPTER_RUNTIME_SOURCE_LOCAL
@@ -123,6 +132,12 @@ internal fun buildAdapterLaunchCommand(
     target: AcpExecutionTarget
 ): List<String> {
     resolveSystemExecutable(adapterInfo, target)?.let { executable ->
+        if (adapterInfo.preferSystemExecutable) {
+            if (isSystemExecutableAvailable(adapterInfo, target)) {
+                return buildAdapterExecutableCommand(executable, adapterInfo.args)
+            }
+            throw IllegalStateException("OpenCode executable was not found on PATH. Install OpenCode system-wide and reopen the IDE.")
+        }
         if (adapterInfo.preferSystemExecutable || !isLocalLaunchAvailable(adapterRootPath, adapterInfo, target)) {
             if (isSystemExecutableAvailable(adapterInfo, target)) {
                 return buildAdapterExecutableCommand(executable, adapterInfo.args)
@@ -133,29 +148,6 @@ internal fun buildAdapterLaunchCommand(
     val launchPath = resolveAdapterLaunchPath(adapterRootPath, adapterInfo, target)
         ?: throw IllegalStateException("Missing launch target for adapter '${adapterInfo.id}'")
     return buildAdapterExecutableCommand(File(launchPath).absolutePath, adapterInfo.args)
-}
-
-internal fun resolvePatchRoot(adapterRoot: File, adapterInfo: AcpAdapterConfig.AdapterInfo): File {
-    return when (adapterInfo.distribution.type) {
-        AcpAdapterConfig.DistributionType.ARCHIVE -> adapterRoot
-        AcpAdapterConfig.DistributionType.NPM -> resolveNpmPackageRoot(adapterRoot, adapterInfo)
-    }
-}
-
-private fun resolveNpmPackageRoot(adapterRoot: File, adapterInfo: AcpAdapterConfig.AdapterInfo): File {
-    val packageName = adapterInfo.distribution.packageName
-        ?: throw IllegalStateException("Adapter '${adapterInfo.id}' missing distribution.packageName in configuration")
-    return File(adapterRoot, "node_modules${File.separator}$packageName")
-}
-
-internal fun resolveNpmPackageRootPath(
-    adapterRootPath: String,
-    adapterInfo: AcpAdapterConfig.AdapterInfo,
-    target: AcpExecutionTarget
-): String {
-    val packageName = adapterInfo.distribution.packageName
-        ?: throw IllegalStateException("Adapter '${adapterInfo.id}' missing distribution.packageName in configuration")
-    return joinAdapterPath(adapterRootPath, "node_modules/$packageName", target)
 }
 
 private fun resolveNpmLaunchRelativePath(

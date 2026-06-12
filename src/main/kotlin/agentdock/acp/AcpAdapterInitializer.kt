@@ -190,7 +190,7 @@ private fun AcpClientService.triggerBackgroundHistorySyncIfInitializationsSettle
 internal suspend fun AcpClientService.initializeAdapterIfEligible(adapterName: String) {
     val adapterInfo = AcpAdapterPaths.getAdapterInfo(adapterName)
     if (!AcpAdapterPaths.isDownloaded(adapterInfo.id)) {
-        throw IllegalStateException("Agent '${adapterInfo.id}' is not downloaded")
+        throw IllegalStateException("OpenCode executable was not found on PATH. Install OpenCode system-wide and reopen the IDE.")
     }
 
     val deferred = adapterInitialization.computeIfAbsent(adapterInfo.id) { CompletableDeferred<Unit>() }

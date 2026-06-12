@@ -124,25 +124,6 @@ export function useAppController() {
     });
   }, [cleanupTabUi]);
 
-  useEffect(() => {
-    return ACPBridge.onAdapterDeleted((e) => {
-      const deletedId = e.detail.adapterId;
-      setTabs(prev => {
-        const toClose = prev.filter(tab => {
-          if (tab.type !== 'chat') return false;
-          const currentAdapter = tabSessionState[tab.id]?.adapterName;
-          return currentAdapter ? currentAdapter === deletedId : tab.agentId === deletedId;
-        });
-        if (toClose.length === 0) return prev;
-        toClose.forEach(tab => {
-          try { window.__stopAgent?.(tab.conversationId); } catch (_) {}
-          cleanupTabUi(tab.id);
-        });
-        return prev.filter(tab => !toClose.some(c => c.id === tab.id));
-      });
-    });
-  }, [cleanupTabUi, tabSessionState]);
-
   const runnableAgents = useMemo(() => availableAgents.filter(isAgentRunnable), [availableAgents]);
   const agentAvailabilityResolved = useMemo(
     () => adaptersResolved && availableAgents.every((agent) => agent.downloadedKnown === true),

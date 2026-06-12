@@ -436,14 +436,16 @@ export function ClearEditorPlugin({ inputValue }: { inputValue: string }) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    if (inputValue === '') {
-      editor.update(() => {
-        const root = $getRoot();
-        if (root.getTextContent() !== '' || root.getChildrenSize() > 1) {
-          root.clear();
-        }
-      });
-    }
+    editor.update(() => {
+      const root = $getRoot();
+      const currentText = root.getTextContent();
+      if (currentText === inputValue) return;
+      root.clear();
+      if (inputValue) {
+        const textNode = $createTextNode(inputValue);
+        root.append(textNode);
+      }
+    });
   }, [inputValue, editor]);
 
   return null;

@@ -31,10 +31,6 @@ class AcpBridge(
     internal var readyQuery: JBCefJSQuery? = null
     internal var loadConversationQuery: JBCefJSQuery? = null
     internal var recoverRuntimeQuery: JBCefJSQuery? = null
-    internal var downloadAgentQuery: JBCefJSQuery? = null
-    internal var cancelAgentInstallQuery: JBCefJSQuery? = null
-    internal var deleteAgentQuery: JBCefJSQuery? = null
-    internal var updateAgentQuery: JBCefJSQuery? = null
     internal var toggleAgentEnabledQuery: JBCefJSQuery? = null
     internal var setHiddenModelsQuery: JBCefJSQuery? = null
     internal var loginAgentQuery: JBCefJSQuery? = null
@@ -60,16 +56,11 @@ class AcpBridge(
 
     internal val promptJobs = ConcurrentHashMap<String, Job>()
     internal val lastStatusByChatId = ConcurrentHashMap<String, String>()
-    internal val downloadStatuses = ConcurrentHashMap<String, String>()
-    internal val adapterInstallJobs = ConcurrentHashMap<String, Job>()
-    internal val adapterInstallCancellations = ConcurrentHashMap<String, AcpAdapterInstallCancellation>()
     internal val downloadProbeJobs = ConcurrentHashMap<String, Job>()
     internal val downloadProbeStates = ConcurrentHashMap<String, AdapterDownloadProbeState>()
     internal val authActionJobs = ConcurrentHashMap<String, Job>()
     internal val authFetchJobs = ConcurrentHashMap<String, Job>()
     internal val authStates = ConcurrentHashMap<String, Boolean>()
-    internal val updateCheckJobs = ConcurrentHashMap<String, Job>()
-    internal val latestVersionStates = ConcurrentHashMap<String, String>()
     internal val agentVersionJobs = ConcurrentHashMap<String, Job>()
     internal val agentVersionStates = ConcurrentHashMap<String, String>()
     internal val replaySeqByChatId = ConcurrentHashMap<String, Int>()

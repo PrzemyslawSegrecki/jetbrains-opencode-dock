@@ -5,13 +5,8 @@
   "iconPathLight": "/icons/opencode-light.svg",
   "iconPathDark": "/icons/opencode_dark.svg",
   "distribution": {
-    "type": "npm",
-    "version": "latest",
-    "packageName": "opencode-ai"
-  },
-  "launchBinary": {
-    "win": "node_modules/.bin/opencode.cmd",
-    "unix": "node_modules/opencode-ai/bin/opencode"
+    "type": "system",
+    "version": "system"
   },
   "systemExecutable": {
     "win": "opencode.cmd",
@@ -23,8 +18,8 @@
   ],
   "cli": {
     "executable": {
-      "win": "node_modules/.bin/opencode.cmd",
-      "unix": "node_modules/opencode-ai/bin/opencode"
+      "win": "opencode.cmd",
+      "unix": "opencode"
     },
     "resumeArgs": [
       "--session",

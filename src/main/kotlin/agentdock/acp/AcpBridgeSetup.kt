@@ -2,13 +2,11 @@ package opencodedock.acp
 
 import com.agentclientprotocol.model.SessionUpdate
 import com.intellij.ui.jcef.JBCefJSQuery
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import opencodedock.history.OpenCodeDockHistoryService
-import java.io.File
 internal fun AcpBridge.installServiceCallbacks() {
     service.setOnLogEntry { pushLogEntry(it) }
     service.setOnPermissionRequest { pushPermissionRequest(it) }
@@ -256,194 +254,6 @@ internal fun AcpBridge.installAdapterQueries() {
         }
     }
 
-    downloadAgentQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
-        addHandler { payload ->
-            val adapterId = parseIdOnlyPayload(payload)
-            if (adapterId != null) {
-                if (adapterInstallJobs[adapterId]?.isActive == true) {
-                    return@addHandler JBCefJSQuery.Response("ok")
-                }
-                val cancellation = AcpAdapterInstallCancellation()
-                adapterInstallCancellations[adapterId] = cancellation
-                val job = scope.launch(Dispatchers.IO) {
-                    val target = AcpAdapterPaths.getExecutionTarget()
-                    var replacingRuntime = false
-                    try {
-                        downloadStatuses[adapterId] = "Starting download..."
-                        resetDownloadProbeState(adapterId)
-                        pushAdapters()
-
-                        service.stopSharedProcess(adapterId)
-                        latestVersionStates.remove(adapterId)
-                        val adapterInfo = AcpAdapterPaths.getAdapterInfo(adapterId)
-                        val targetDir = File(AcpAdapterPaths.getDependenciesDir(), adapterInfo.id)
-
-                        val statusCallback = { status: String ->
-                            downloadStatuses[adapterId] = status
-                            pushAdapters()
-                        }
-
-                        replacingRuntime = true
-                        val success = AcpAdapterPaths.installAdapterRuntime(
-                            targetDir = targetDir,
-                            adapterInfo = adapterInfo,
-                            statusCallback = statusCallback,
-                            target = target,
-                            cancellation = cancellation
-                        )
-
-                        if (success) {
-                            downloadStatuses.remove(adapterId)
-                            val installedVersion = AcpAdapterPaths.installedVersion(adapterId, target)
-                            setDownloadProbeState(adapterId, target, downloaded = true, installedVersion = installedVersion)
-                            service.initializeAdapterInBackground(adapterId)
-                            pushAdapters()
-                        } else {
-                            downloadStatuses.compute(adapterId) { _, previous ->
-                                previous?.takeIf { it.startsWith("Error:") } ?: "Error: Download failed"
-                            }
-                            pushAdapters()
-                        }
-                    } catch (_: CancellationException) {
-                        downloadStatuses.remove(adapterId)
-                        if (replacingRuntime) {
-                            runCatching { AcpAdapterPaths.deleteAdapter(adapterId, target) }
-                        }
-                        resetDownloadProbeState(adapterId)
-                    } catch (e: Exception) {
-                        downloadStatuses[adapterId] = "Error: ${e.message}"
-                    } finally {
-                        adapterInstallJobs.remove(adapterId)
-                        adapterInstallCancellations.remove(adapterId)
-                        pushAdapters()
-                    }
-                }
-                adapterInstallJobs[adapterId] = job
-            }
-            JBCefJSQuery.Response("ok")
-        }
-    }
-
-    cancelAgentInstallQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
-        addHandler { payload ->
-            val adapterId = parseIdOnlyPayload(payload)
-            if (adapterId != null) {
-                downloadStatuses[adapterId] = "Cancelling..."
-                adapterInstallCancellations.remove(adapterId)?.cancel()
-                adapterInstallJobs.remove(adapterId)?.cancel(CancellationException("Adapter installation cancelled"))
-                pushAdapters()
-            }
-            JBCefJSQuery.Response("ok")
-        }
-    }
-
-    deleteAgentQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
-        addHandler { payload ->
-            val adapterId = parseIdOnlyPayload(payload)
-            if (adapterId != null) {
-                scope.launch(Dispatchers.IO) {
-                    service.stopSharedProcess(adapterId)
-                    latestVersionStates.remove(adapterId)
-                    resetDownloadProbeState(adapterId)
-                    val deleted = AcpAdapterPaths.deleteAdapter(adapterId, AcpAdapterPaths.getExecutionTarget())
-                    if (deleted) {
-                        downloadStatuses.remove(adapterId)
-                        setDownloadProbeState(adapterId, AcpAdapterPaths.getExecutionTarget(), downloaded = false)
-                        runOnEdt {
-                            browser.cefBrowser.executeJavaScript(
-                                "if(window.__onAdapterDeleted) window.__onAdapterDeleted(${jsStringLiteral(adapterId)});",
-                                browser.cefBrowser.url, 0
-                            )
-                        }
-                    } else {
-                        downloadStatuses[adapterId] = "Error: Unable to remove adapter files"
-                    }
-                    pushAdapters()
-                }
-            }
-            JBCefJSQuery.Response("ok")
-        }
-    }
-
-    updateAgentQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
-        addHandler { payload ->
-            val adapterId = parseIdOnlyPayload(payload)
-            if (adapterId != null) {
-                if (adapterInstallJobs[adapterId]?.isActive == true) {
-                    return@addHandler JBCefJSQuery.Response("ok")
-                }
-                val cancellation = AcpAdapterInstallCancellation()
-                adapterInstallCancellations[adapterId] = cancellation
-                val job = scope.launch(Dispatchers.IO) {
-                    var replacingRuntime = false
-                    try {
-                        val adapterInfo = AcpAdapterPaths.getAdapterInfo(adapterId)
-                        if (!AcpAdapterUpdates.isUpdateCheckSupported(adapterInfo)) {
-                            return@launch
-                        }
-
-                        val latestVersion = latestVersionStates[adapterId]
-                            ?: AcpAdapterUpdates.latestAvailableVersion(adapterInfo)
-                            ?: throw IllegalStateException("Unable to resolve latest version")
-                        cancellation.throwIfCancelled()
-                        latestVersionStates[adapterId] = latestVersion
-
-                        downloadStatuses[adapterId] = "Updating to $latestVersion..."
-                        resetDownloadProbeState(adapterId)
-                        pushAdapters()
-
-                        service.stopSharedProcess(adapterId)
-                        val target = AcpAdapterPaths.getExecutionTarget()
-                        val targetDir = File(AcpAdapterPaths.getDependenciesDir(), adapterInfo.id)
-                        val deleted = AcpAdapterPaths.deleteAdapter(adapterId, target)
-                        if (!deleted) {
-                            throw IllegalStateException("Unable to remove old adapter files")
-                        }
-                        replacingRuntime = true
-
-                        val statusCallback = { status: String ->
-                            downloadStatuses[adapterId] = status
-                            pushAdapters()
-                        }
-
-                        val success = AcpAdapterPaths.installAdapterRuntime(
-                            targetDir = targetDir,
-                            adapterInfo = adapterInfo,
-                            statusCallback = statusCallback,
-                            target = target,
-                            versionOverride = latestVersion,
-                            cancellation = cancellation
-                        )
-
-                        if (success) {
-                            downloadStatuses.remove(adapterId)
-                            setDownloadProbeState(adapterId, target, downloaded = true, installedVersion = latestVersion)
-                            service.initializeAdapterInBackground(adapterId)
-                        } else {
-                            downloadStatuses.compute(adapterId) { _, previous ->
-                                previous?.takeIf { it.startsWith("Error:") } ?: "Error: Update failed"
-                            }
-                        }
-                    } catch (_: CancellationException) {
-                        downloadStatuses.remove(adapterId)
-                        if (replacingRuntime) {
-                            runCatching { AcpAdapterPaths.deleteAdapter(adapterId, AcpAdapterPaths.getExecutionTarget()) }
-                        }
-                        resetDownloadProbeState(adapterId)
-                    } catch (e: Exception) {
-                        downloadStatuses[adapterId] = "Error: ${e.message}"
-                    } finally {
-                        adapterInstallJobs.remove(adapterId)
-                        adapterInstallCancellations.remove(adapterId)
-                        pushAdapters()
-                    }
-                }
-                adapterInstallJobs[adapterId] = job
-            }
-            JBCefJSQuery.Response("ok")
-        }
-    }
-
     toggleAgentEnabledQuery = JBCefJSQuery.create(browser as com.intellij.ui.jcef.JBCefBrowserBase).apply {
         addHandler { payload ->
             val obj = runCatching { Json.parseToJsonElement(payload).jsonObject }.getOrNull()
@@ -483,7 +293,6 @@ internal fun AcpBridge.installAdapterQueries() {
                 existingJob?.cancel()
                 val job = scope.launch(Dispatchers.Default) {
                     try {
-                        downloadStatuses.remove(adapterId)
                         AcpAuthService.incrementActive(adapterId)
                         pushAdapters()
                         when {

@@ -8,7 +8,7 @@ import opencodedock.utils.escapeForJsString
 /**
  * Injects the real JS bridge: window.__startAgent, __sendPrompt, __undoFile, etc.
  * Called from the ready handler after React has called __notifyReady() and set window.__on* callbacks.
- * (injectReadySignal runs first on page load and only sets no-op stubs for __on* and __downloadAgent etc.)
+ * (injectReadySignal runs first on page load and only sets no-op stubs for __on* callbacks.)
  */
 internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val startAgentInject = startAgentQuery?.inject("JSON.stringify({ requestId: (requestId || ''), chatId: chatId, adapterId: (adapterId || ''), modelId: (modelId || '') })") ?: ""
@@ -22,10 +22,6 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
     val respondPermissionInject = respondPermissionQuery?.inject("JSON.stringify({ requestId: requestId, decision: decision })") ?: ""
     val loadConversationInject = loadConversationQuery?.inject("JSON.stringify({ chatId: chatId, projectPath: (projectPath || ''), conversationId: (conversationId || '') })") ?: ""
     val recoverRuntimeInject = recoverRuntimeQuery?.inject("JSON.stringify({ requestId: (requestId || ''), reason: (reason || '') })") ?: ""
-    val downloadAgentInject = downloadAgentQuery?.inject("adapterId") ?: ""
-    val cancelAgentInstallInject = cancelAgentInstallQuery?.inject("adapterId") ?: ""
-    val deleteAgentInject = deleteAgentQuery?.inject("adapterId") ?: ""
-    val updateAgentInject = updateAgentQuery?.inject("adapterId") ?: ""
     val toggleAgentEnabledInject = toggleAgentEnabledQuery?.inject("JSON.stringify(payload)") ?: ""
     val setHiddenModelsInject = setHiddenModelsQuery?.inject("JSON.stringify(payload)") ?: ""
     val loginAgentInject = loginAgentQuery?.inject("adapterId") ?: ""
@@ -88,18 +84,6 @@ internal fun AcpBridge.injectDebugApi(cefBrowser: CefBrowser) {
             };
             window.__recoverRuntime = function(reason, requestId) {
                 try { $recoverRuntimeInject } catch (e) { }
-            };
-            window.__downloadAgent = function(adapterId) {
-                try { $downloadAgentInject } catch (e) { }
-            };
-            window.__cancelAgentInstall = function(adapterId) {
-                try { $cancelAgentInstallInject } catch (e) { }
-            };
-            window.__deleteAgent = function(adapterId) {
-                try { $deleteAgentInject } catch (e) { }
-            };
-            window.__updateAgent = function(adapterId) {
-                try { $updateAgentInject } catch (e) { }
             };
             window.__toggleAgentEnabled = function(payload) {
                 try { $toggleAgentEnabledInject } catch (e) { }
@@ -207,11 +191,6 @@ internal fun AcpBridge.injectReadySignal(cefBrowser: CefBrowser) {
         window.__notifyReady = function() {
             try { $readyInject } catch (e) { }
         };
-        window.__downloadAgent = window.__downloadAgent || function(id) {};
-        window.__cancelAgentInstall = window.__cancelAgentInstall || function(id) {};
-        window.__deleteAgent = window.__deleteAgent || function(id) {};
-        window.__onAdapterDeleted = window.__onAdapterDeleted || function(id) {};
-        window.__updateAgent = window.__updateAgent || function(id) {};
         window.__toggleAgentEnabled = window.__toggleAgentEnabled || function(payload) {};
         window.__loginAgent = window.__loginAgent || function(id) {};
         window.__logoutAgent = window.__logoutAgent || function(id) {};

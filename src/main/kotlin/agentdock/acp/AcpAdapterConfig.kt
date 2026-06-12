@@ -60,6 +60,7 @@ object AcpAdapterConfig {
 
     @Serializable
     enum class DistributionType {
+        @SerialName("system") SYSTEM,
         @SerialName("npm") NPM,
         @SerialName("archive") ARCHIVE
     }
@@ -118,9 +119,7 @@ object AcpAdapterConfig {
     ) {
         fun getConfiguredVersion(): String = distribution.version
 
-        fun withDistributionVersion(version: String): AdapterInfo {
-            return copy(distribution = distribution.copy(version = version))
-        }
+        fun withDistributionVersion(version: String): AdapterInfo = copy(distribution = distribution.copy(version = version))
     }
 
     @Serializable
