@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
@@ -442,8 +443,9 @@ export function ClearEditorPlugin({ inputValue }: { inputValue: string }) {
       if (currentText === inputValue) return;
       root.clear();
       if (inputValue) {
-        const textNode = $createTextNode(inputValue);
-        root.append(textNode);
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode(inputValue));
+        root.append(paragraph);
       }
     });
   }, [inputValue, editor]);
