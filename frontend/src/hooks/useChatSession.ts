@@ -19,6 +19,11 @@ import {
   prependHandoffContext,
   titleFromFirstPrompt,
 } from './chatSession/messageBasics';
+import {
+  buildConversationHandoffFromTranscriptFile,
+  buildConversationHandoffSaveFailureContext,
+  prepareConversationHandoff,
+} from '../utils/conversationHandoff';
 import { buildPromptBlocks } from './chatSession/promptBlocks';
 import {
   PinnedAgentSnapshot,
@@ -83,6 +88,7 @@ export function useChatSession(
   const canRestartHistorySessionRef = useRef(false);
   const revertInFlightRef = useRef(false);
   const revertHandoffTextRef = useRef<string | null>(null);
+  const revertHandoffPendingRef = useRef(false);
   // A fresh chat has no history replay and no preloaded (fork/continuation) messages.
   const isFreshChatRef = useRef(!historySession && initialMessages.length === 0);
 
@@ -580,6 +586,7 @@ export function useChatSession(
   const handleSend = useCallback(() => {
     const text = inputValue.trim();
     if ((!text && attachments.length === 0) || isSending || status === 'prompting') return;
+    if (revertHandoffPendingRef.current) return;
 
     const normalizedBlocks = normalizeOutgoingBlocks(buildPromptBlocks(inputValue, attachments));
     if (normalizedBlocks.length === 0) return;
@@ -686,6 +693,32 @@ export function useChatSession(
     const keepMessages = allMessages.slice(0, messageIndex);
     const promptCount = keepMessages.filter((m) => m.role === 'user').length;
 
+    // Preserve the retained conversation history as handoff context for the
+    // next prompt. Without this, the restarted ACP session sees only the new
+    // user turn and loses all prior context.
+    const handoff = prepareConversationHandoff(keepMessages, []);
+    if (!handoff.exceedsInlineLimit) {
+      revertHandoffTextRef.current = handoff.handoffText;
+      revertHandoffPendingRef.current = false;
+    } else {
+      revertHandoffPendingRef.current = true;
+      ACPBridge.saveConversationTranscript(conversationId, handoff.normalizedTranscript)
+        .then((saved) => {
+          revertHandoffTextRef.current = buildConversationHandoffFromTranscriptFile(
+            handoff,
+            saved.filePath || '',
+          );
+        })
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn('[useChatSession] Failed to save revert handoff transcript:', error);
+          revertHandoffTextRef.current = buildConversationHandoffSaveFailureContext(handoff, message);
+        })
+        .finally(() => {
+          revertHandoffPendingRef.current = false;
+        });
+    }
+
     setHistoryMessages(keepMessages);
     setLiveMessages([]);
     setInputValue(targetMessage.content || '');
@@ -701,7 +734,6 @@ export function useChatSession(
     startedModelIdRef.current = '';
     startedModeIdRef.current = '';
     canRestartHistorySessionRef.current = true;
-    revertHandoffTextRef.current = null;
     initialUserMessageCountRef.current = promptCount;
     allowMetadataUpdateRef.current = !historySession;
     touchUpdatedAtRef.current = !historySession;
