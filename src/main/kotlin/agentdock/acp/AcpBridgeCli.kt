@@ -199,9 +199,7 @@ internal fun buildAdapterCliCommandParts(
     if (!AcpAdapterPaths.isDownloaded(adapterId, target)) return null
 
     if (AcpAdapterPaths.runtimeSource(adapterId, target) == ADAPTER_RUNTIME_SOURCE_SYSTEM) {
-        val executable = platformBinaryForTarget(adapterInfo.systemExecutable, target)
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
+        val executable = resolveAvailableSystemExecutable(adapterInfo, target)
             ?: return null
         val commandParts = buildAdapterExecutableCommand(executable, cli.args + extraArgs)
         return adapterInfo to commandParts

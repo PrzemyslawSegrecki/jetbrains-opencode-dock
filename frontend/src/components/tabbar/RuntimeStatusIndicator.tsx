@@ -10,6 +10,9 @@ function deriveRuntimeStatus(agent: AgentOption | undefined): RuntimeStatus {
     return { tone: 'warning', label: 'Checking OpenCode', detail: 'Detecting the OpenCode runtime…' };
   }
   if (agent.downloaded !== true) {
+    if (agent.runtimeProbeError) {
+      return { tone: 'error', label: 'Runtime probe failed', detail: agent.runtimeProbeError };
+    }
     return { tone: 'error', label: 'OpenCode not found', detail: 'Install OpenCode system-wide so it is on your PATH, then reopen.' };
   }
   if (agent.initializationError) {

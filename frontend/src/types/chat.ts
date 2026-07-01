@@ -121,6 +121,7 @@ export interface AgentOption {
   downloaded?: boolean;
   downloadedKnown?: boolean;
   runtimeSource?: 'local' | 'system' | '';
+  runtimeProbeError?: string;
   enabled?: boolean;
   downloadPath?: string;
   downloading?: boolean;

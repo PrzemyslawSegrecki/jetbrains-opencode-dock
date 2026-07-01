@@ -35,6 +35,7 @@ internal data class AdapterPayload(
     val downloaded: Boolean? = null,
     val downloadedKnown: Boolean = false,
     val runtimeSource: String = "",
+    val runtimeProbeError: String = "",
     val enabled: Boolean = true,
     val downloadPath: String = "",
     val hasAuthentication: Boolean,
@@ -124,7 +125,8 @@ internal data class AdapterDownloadProbeState(
     val downloaded: Boolean? = null,
     val downloadedKnown: Boolean = false,
     val runtimeSource: String = "",
-    val installedVersion: String? = null
+    val installedVersion: String? = null,
+    val probeError: String? = null
 )
 
 internal data class LivePromptCapture(

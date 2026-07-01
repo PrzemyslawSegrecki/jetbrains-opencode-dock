@@ -8,6 +8,14 @@ private const val DEFAULT_NPM_LAUNCH_PATH = "dist/index.js"
 internal const val ADAPTER_RUNTIME_SOURCE_LOCAL = "local"
 internal const val ADAPTER_RUNTIME_SOURCE_SYSTEM = "system"
 
+internal data class SystemExecutableProbeResult(
+    val executable: String? = null,
+    val version: String? = null,
+    val error: String? = null
+) {
+    val available: Boolean get() = executable != null
+}
+
 internal fun isWindowsLocalTarget(target: AcpExecutionTarget): Boolean =
     target == AcpExecutionTarget.LOCAL && AcpExecutionMode.isWindowsHost()
 
@@ -101,28 +109,21 @@ internal fun isSystemExecutableAvailable(
     adapterInfo: AcpAdapterConfig.AdapterInfo,
     target: AcpExecutionTarget
 ): Boolean {
-    val executable = resolveSystemExecutable(adapterInfo, target) ?: return false
-    return runCatching {
-        val process = ProcessBuilder(buildAdapterExecutableCommand(executable, listOf("--version"))).redirectErrorStream(true).start()
-        val finished = process.waitFor(10, TimeUnit.SECONDS)
-        if (!finished) process.destroyForcibly()
-        finished && process.exitValue() == 0
-    }.getOrDefault(false)
+    return probeSystemExecutable(adapterInfo, target).available
 }
 
 internal fun systemExecutableVersion(
     adapterInfo: AcpAdapterConfig.AdapterInfo,
     target: AcpExecutionTarget
 ): String? {
-    val executable = resolveSystemExecutable(adapterInfo, target) ?: return null
-    return runCatching {
-        val process = ProcessBuilder(buildAdapterExecutableCommand(executable, listOf("--version"))).redirectErrorStream(true).start()
-        val output = process.inputStream.bufferedReader().use { it.readText() }
-        val finished = process.waitFor(10, TimeUnit.SECONDS)
-        if (!finished) process.destroyForcibly()
-        if (!finished || process.exitValue() != 0) return null
-        Regex("""(\d+\.\d+[\d.\-]*)""").find(output)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
-    }.getOrNull()
+    return probeSystemExecutable(adapterInfo, target).version
+}
+
+internal fun systemExecutableProbeError(
+    adapterInfo: AcpAdapterConfig.AdapterInfo,
+    target: AcpExecutionTarget
+): String? {
+    return probeSystemExecutable(adapterInfo, target).error
 }
 
 internal fun buildAdapterLaunchCommand(
@@ -131,17 +132,13 @@ internal fun buildAdapterLaunchCommand(
     projectPath: String?,
     target: AcpExecutionTarget
 ): List<String> {
-    resolveSystemExecutable(adapterInfo, target)?.let { executable ->
-        if (adapterInfo.preferSystemExecutable) {
-            if (isSystemExecutableAvailable(adapterInfo, target)) {
-                return buildAdapterExecutableCommand(executable, adapterInfo.args)
-            }
-            throw IllegalStateException("OpenCode executable was not found on PATH. Install OpenCode system-wide and reopen the IDE.")
-        }
+    probeSystemExecutable(adapterInfo, target).executable?.let { executable ->
         if (adapterInfo.preferSystemExecutable || !isLocalLaunchAvailable(adapterRootPath, adapterInfo, target)) {
-            if (isSystemExecutableAvailable(adapterInfo, target)) {
-                return buildAdapterExecutableCommand(executable, adapterInfo.args)
-            }
+            return buildAdapterExecutableCommand(executable, adapterInfo.args)
+        }
+    } ?: run {
+        if (adapterInfo.preferSystemExecutable) {
+            throw IllegalStateException("OpenCode executable was not found on PATH. Install OpenCode system-wide and reopen the IDE.")
         }
     }
 
@@ -167,6 +164,129 @@ private fun resolveSystemExecutable(
     adapterInfo: AcpAdapterConfig.AdapterInfo,
     target: AcpExecutionTarget
 ): String? = platformBinaryForTarget(adapterInfo.systemExecutable, target)?.trim()?.takeIf { it.isNotEmpty() }
+
+internal fun systemExecutableCandidates(
+    adapterInfo: AcpAdapterConfig.AdapterInfo,
+    target: AcpExecutionTarget
+): List<String> = systemExecutableCandidates(resolveSystemExecutable(adapterInfo, target), target)
+
+internal fun systemExecutableCandidates(
+    executable: String?,
+    target: AcpExecutionTarget
+): List<String> {
+    val raw = executable?.trim().takeUnless { it.isNullOrEmpty() } ?: return emptyList()
+    if (!isWindowsLocalTarget(target)) return listOf(raw)
+
+    val file = File(raw)
+    val parent = file.parentFile
+    val stem = file.nameWithoutExtension.ifBlank { file.name }
+    val basePath = parent?.let { File(it, stem).path } ?: stem
+
+    val names = buildList {
+        add(raw)
+        add("$basePath.exe")
+        add("$basePath.ps1")
+        add(basePath)
+        add("$basePath.cmd")
+        add("$basePath.bat")
+    }.distinct()
+
+    return names.flatMap { candidate ->
+        val resolved = resolveWindowsExecutableCandidate(candidate)
+        if (resolved != null) listOf(resolved, candidate) else listOf(candidate)
+    }.distinct()
+}
+
+internal fun resolveAvailableSystemExecutable(
+    adapterInfo: AcpAdapterConfig.AdapterInfo,
+    target: AcpExecutionTarget
+): String? = probeSystemExecutable(adapterInfo, target).executable
+
+internal fun probeSystemExecutable(
+    adapterInfo: AcpAdapterConfig.AdapterInfo,
+    target: AcpExecutionTarget
+): SystemExecutableProbeResult {
+    val candidates = systemExecutableCandidates(adapterInfo, target)
+    val errors = mutableListOf<String>()
+
+    candidates.forEach { executable ->
+        val probe = runSystemExecutableVersionCheck(executable)
+        if (probe?.available == true) {
+            return probe
+        }
+        probe?.error?.takeIf { it.isNotBlank() }?.let { errors.add(it) }
+    }
+
+    val detail = when {
+        errors.isEmpty() -> null
+        errors.size == 1 -> errors.first()
+        else -> errors.distinct().joinToString(" | ")
+    }
+
+    return SystemExecutableProbeResult(error = detail)
+}
+
+private fun runSystemExecutableVersionCheck(executable: String): SystemExecutableProbeResult {
+    return runCatching {
+        val process = ProcessBuilder(buildAdapterExecutableCommand(executable, listOf("--version"))).redirectErrorStream(true).start()
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val finished = process.waitFor(10, TimeUnit.SECONDS)
+        if (!finished) process.destroyForcibly()
+        if (!finished) {
+            return SystemExecutableProbeResult(error = "OpenCode process did not answer to --version within 10 seconds.")
+        }
+        if (process.exitValue() != 0) {
+            val detail = output.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() }
+            return SystemExecutableProbeResult(
+                error = detail ?: "OpenCode exited with code ${process.exitValue()} while probing --version."
+            )
+        }
+        val version = Regex("""(\d+\.\d+[\d.\-]*)""").find(output)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
+        SystemExecutableProbeResult(executable = executable, version = version)
+    }.getOrElse { error ->
+        SystemExecutableProbeResult(error = error.message ?: error.toString())
+    }
+}
+
+private fun resolveWindowsExecutableCandidate(candidate: String): String? {
+    val file = File(candidate)
+    if (file.isAbsolute) {
+        return file.takeIf { it.isFile }?.absolutePath
+    }
+
+    return windowsExecutableSearchDirs()
+        .asSequence()
+        .map { dir -> File(dir, candidate) }
+        .firstOrNull { it.isFile }
+        ?.absolutePath
+}
+
+private fun windowsExecutableSearchDirs(): List<File> {
+    val env = System.getenv()
+    val pathKey = env.keys.firstOrNull { it.equals("PATH", ignoreCase = true) } ?: "PATH"
+    val pathDirs = env[pathKey]
+        .orEmpty()
+        .split(File.pathSeparator)
+        .mapNotNull { entry -> entry.trim().takeIf { it.isNotEmpty() }?.let(::File) }
+
+    val home = System.getProperty("user.home").orEmpty()
+    val appData = env["APPDATA"].orEmpty()
+    val localAppData = env["LOCALAPPDATA"].orEmpty()
+    val programData = env["ProgramData"].orEmpty()
+
+    val knownDirs = listOf(
+        appData.takeIf { it.isNotBlank() }?.let { File(it, "npm") },
+        home.takeIf { it.isNotBlank() }?.let { File(it, ".opencode\\bin") },
+        home.takeIf { it.isNotBlank() }?.let { File(it, "bin") },
+        home.takeIf { it.isNotBlank() }?.let { File(it, "scoop\\shims") },
+        programData.takeIf { it.isNotBlank() }?.let { File(it, "chocolatey\\bin") },
+        localAppData.takeIf { it.isNotBlank() }?.let { File(it, "Microsoft\\WinGet\\Links") }
+    )
+
+    return (pathDirs + knownDirs.filterNotNull())
+        .filter { it.isDirectory }
+        .distinctBy { it.absolutePath.lowercase() }
+}
 
 private fun isLocalLaunchAvailable(
     adapterRootPath: String,

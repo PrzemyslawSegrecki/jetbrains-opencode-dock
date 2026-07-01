@@ -41,7 +41,8 @@ internal fun AcpBridge.setDownloadProbeState(
     adapterId: String,
     target: AcpExecutionTarget,
     downloaded: Boolean,
-    installedVersion: String? = null
+    installedVersion: String? = null,
+    probeError: String? = null
 ) {
     val key = downloadProbeKey(target, adapterId)
     downloadProbeJobs.remove(key)?.cancel()
@@ -49,7 +50,8 @@ internal fun AcpBridge.setDownloadProbeState(
         downloaded = downloaded,
         downloadedKnown = true,
         runtimeSource = if (downloaded) AcpAdapterPaths.runtimeSource(adapterId, target).orEmpty() else "",
-        installedVersion = installedVersion
+        installedVersion = installedVersion,
+        probeError = probeError
     )
 }
 
@@ -68,6 +70,7 @@ private fun AcpBridge.buildAdapterPayload(
     val downloadedKnown = probeState?.downloadedKnown == true
     val downloaded = probeState?.downloaded
     val runtimeSource = probeState?.runtimeSource.orEmpty()
+    val runtimeProbeError = probeState?.probeError.orEmpty()
     val enabled = runtimeSource != ADAPTER_RUNTIME_SOURCE_SYSTEM || AcpAgentPreferencesStore.isSystemAdapterEnabled(info.id)
     val managedLocally = runtimeSource != ADAPTER_RUNTIME_SOURCE_SYSTEM
     val initStatus = service.adapterInitializationStatus(info.id)
@@ -167,6 +170,7 @@ private fun AcpBridge.buildAdapterPayload(
         downloaded = downloaded,
         downloadedKnown = downloadedKnown,
         runtimeSource = runtimeSource,
+        runtimeProbeError = runtimeProbeError,
         enabled = enabled,
         downloadPath = if (downloaded == true) {
             AcpAdapterPaths.resolveLaunchPath(AcpAdapterPaths.getDownloadPath(info.id, target), info, target).orEmpty()
@@ -219,11 +223,17 @@ private fun AcpBridge.ensureDownloadProbeStarted(
             } else {
                 ""
             }
+            val probeError = if (downloaded) {
+                null
+            } else {
+                systemExecutableProbeError(info, target)
+            }
             downloadProbeStates[key] = AdapterDownloadProbeState(
                 downloaded = downloaded,
                 downloadedKnown = true,
                 runtimeSource = runtimeSource,
-                installedVersion = installedVersion
+                installedVersion = installedVersion,
+                probeError = probeError
             )
         } catch (_: Exception) {
             downloadProbeStates.remove(key)

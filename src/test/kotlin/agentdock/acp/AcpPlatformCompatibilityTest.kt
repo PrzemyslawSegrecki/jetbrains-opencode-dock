@@ -3,6 +3,8 @@ package opencodedock.acp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertContentEquals
+import kotlin.test.assertTrue
 
 class AcpPlatformCompatibilityTest {
     @Test
@@ -44,6 +46,25 @@ class AcpPlatformCompatibilityTest {
         val launchPath = resolveAdapterRuntimePath("/tmp/agent", adapter, AcpExecutionTarget.LOCAL)
 
         assertEquals("tool", launchPath)
+    }
+
+    @Test
+    fun `windows system executable candidates fall back from cmd to exe`() = withOsName("Windows 11") {
+        val candidates = systemExecutableCandidates("opencode.cmd", AcpExecutionTarget.LOCAL)
+
+        assertTrue(candidates.any { it.endsWith("opencode.cmd", ignoreCase = true) })
+        assertTrue(candidates.any { it.endsWith("opencode.exe", ignoreCase = true) })
+        assertTrue(candidates.any { it.endsWith("opencode.ps1", ignoreCase = true) })
+        assertTrue(candidates.any { it == "opencode" || it.endsWith("\\opencode", ignoreCase = true) })
+        assertTrue(candidates.any { it.endsWith("opencode.bat", ignoreCase = true) })
+    }
+
+    @Test
+    fun `unix system executable candidates are unchanged`() = withOsName("Linux") {
+        assertContentEquals(
+            listOf("opencode"),
+            systemExecutableCandidates("opencode", AcpExecutionTarget.LOCAL)
+        )
     }
 
     private fun npmAdapter(): AcpAdapterConfig.AdapterInfo {

@@ -218,6 +218,8 @@ export function EmptyStateView({
     setPendingDeleteItem(null);
   };
 
+  const runtimeProbeError = availableAgents.find((agent) => agent.runtimeProbeError)?.runtimeProbeError;
+
   return (
     <div className="absolute inset-0 z-10 overflow-y-auto bg-background">
       {isInitialLoading ? (
@@ -246,7 +248,9 @@ export function EmptyStateView({
                   </>
                 ) : adaptersResolved ? (
                   <p className="mt-8 max-w-[320px] text-foreground-secondary">
-                    OpenCode was not found. Install it system-wide so it is available on your PATH, then reopen this panel.
+                    {runtimeProbeError
+                      ? `OpenCode runtime probe failed: ${runtimeProbeError}`
+                      : 'OpenCode was not found. Install it system-wide so it is available on your PATH, then reopen this panel.'}
                   </p>
                 ) : (
                   <div className="h-[92px]" />
