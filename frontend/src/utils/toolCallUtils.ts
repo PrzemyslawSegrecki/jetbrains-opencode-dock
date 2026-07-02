@@ -68,6 +68,11 @@ export function extractToolCallDiffEntries(
   }
 
   const rawInput = (json.rawInput && typeof json.rawInput === 'object' ? json.rawInput : fallbackRawInput) as Record<string, any> | undefined;
+  const patchDiffs = extractApplyPatchDiffEntries(rawInput);
+  if (patchDiffs.length > 0) {
+    return patchDiffs;
+  }
+
   if (!rawInput || typeof rawInput.path !== 'string' || rawInput.path.length === 0 || rawInput.file_text === undefined) {
     return [];
   }
@@ -78,6 +83,103 @@ export function extractToolCallDiffEntries(
     oldText: null,
     newText: typeof rawInput.file_text === 'string' ? rawInput.file_text : String(rawInput.file_text),
   }];
+}
+
+function extractApplyPatchDiffEntries(rawInput?: Record<string, any>): ToolCallDiffEntry[] {
+  const patchText = typeof rawInput?.patchText === 'string' ? rawInput.patchText : undefined;
+  if (!patchText || !patchText.includes('*** Begin Patch')) {
+    return [];
+  }
+
+  type PatchHunk = { oldText: string; newText: string };
+  type PatchFile = { path: string; mode: 'add' | 'delete' | 'update'; hunks: PatchHunk[] };
+
+  const files: PatchFile[] = [];
+  let currentPath = '';
+  let currentMode: PatchFile['mode'] | null = null;
+  let currentHunks: PatchHunk[] = [];
+  let oldLines: string[] = [];
+  let newLines: string[] = [];
+
+  const flushHunk = () => {
+    if (!currentPath || (oldLines.length === 0 && newLines.length === 0)) return;
+    currentHunks.push({ oldText: oldLines.join('\n'), newText: newLines.join('\n') });
+    oldLines = [];
+    newLines = [];
+  };
+
+  const flushFile = () => {
+    if (!currentPath || !currentMode) return;
+    flushHunk();
+    files.push({ path: currentPath, mode: currentMode, hunks: currentHunks });
+    currentPath = '';
+    currentMode = null;
+    currentHunks = [];
+    oldLines = [];
+    newLines = [];
+  };
+
+  const normalized = patchText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (const line of normalized.split('\n')) {
+    const match = line.match(/^\*\*\* (Update File|Add File|Delete File):\s*(.+)$/);
+    if (match) {
+      flushFile();
+      currentMode = match[1] === 'Add File' ? 'add' : match[1] === 'Delete File' ? 'delete' : 'update';
+      currentPath = match[2].trim();
+      continue;
+    }
+
+    if (!currentPath || line === '*** Begin Patch' || line === '*** End Patch') {
+      continue;
+    }
+
+    if (line.startsWith('@@')) {
+      flushHunk();
+      continue;
+    }
+
+    if (line.startsWith('+')) {
+      newLines.push(line.slice(1));
+      continue;
+    }
+
+    if (line.startsWith('-')) {
+      oldLines.push(line.slice(1));
+      continue;
+    }
+
+    const sharedLine = line.startsWith(' ') ? line.slice(1) : line;
+    oldLines.push(sharedLine);
+    newLines.push(sharedLine);
+  }
+
+  flushFile();
+
+  const diffs: ToolCallDiffEntry[] = [];
+  for (const file of files) {
+    if (file.mode === 'add') {
+      const newText = file.hunks.map((hunk) => hunk.newText).join('\n');
+      if (newText) {
+        diffs.push({ type: 'diff', path: file.path, oldText: null, newText });
+      }
+      continue;
+    }
+
+    if (file.mode === 'delete') {
+      const oldText = file.hunks.map((hunk) => hunk.oldText).join('\n');
+      if (oldText) {
+        diffs.push({ type: 'diff', path: file.path, oldText, newText: '' });
+      }
+      continue;
+    }
+
+    for (const hunk of file.hunks) {
+      if (hunk.oldText === hunk.newText) continue;
+      diffs.push({ type: 'diff', path: file.path, oldText: hunk.oldText, newText: hunk.newText });
+    }
+  }
+
+  return diffs;
 }
 
 function isExecutePermissionPayload(json: Record<string, any>): boolean {
